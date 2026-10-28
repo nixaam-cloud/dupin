@@ -52,7 +52,39 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _notificationCount = 0;
 
-    public bool IsNormalCollapsed => !IsNotificationActive && !IsPeeking;
+    // Hardware HUD Interceptor State (Volume, Mic-Mute, Brightness)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNormalCollapsed))]
+    private bool _isHardwareHudActive = false;
+
+    [ObservableProperty]
+    private string _hudTitle = "Volume";
+
+    [ObservableProperty]
+    private string _hudValueText = "50%";
+
+    [ObservableProperty]
+    private int _hudPercentage = 50;
+
+    [ObservableProperty]
+    private double _hudBarWidth = 36.0;
+
+    [ObservableProperty]
+    private bool _isHudVolume = true;
+
+    [ObservableProperty]
+    private bool _isHudVolumeMuted = false;
+
+    [ObservableProperty]
+    private bool _isHudMicMuted = false;
+
+    [ObservableProperty]
+    private bool _isHudMicUnmuted = false;
+
+    [ObservableProperty]
+    private bool _isHudBrightness = false;
+
+    public bool IsNormalCollapsed => !IsNotificationActive && !IsPeeking && !IsHardwareHudActive;
 
     // Battery / Power
     [ObservableProperty]
@@ -84,9 +116,13 @@ public partial class MainViewModel : ObservableObject
     public event Action? WakeUpRequested;
     public event Action<AppNotificationItem>? NotificationBannerTriggered;
     public event Action? NotificationDismissed;
+    public event Action? HardwareHudTriggered;
+    public event Action? HardwareHudDismissed;
+    public event Action? RequestExpandToAi;
 
     private readonly DispatcherTimer _peekTimer;
     private readonly DispatcherTimer _notificationTimer;
+    private readonly DispatcherTimer _hudTimer;
 
     public MediaViewModel Media { get; }
     public TimerViewModel Timer { get; }
@@ -97,6 +133,7 @@ public partial class MainViewModel : ObservableObject
     public AiAssistantViewModel AI { get; }
     public SystemStatusService SystemStatus { get; }
     public NotificationListenerService NotificationListener { get; }
+    public HardwareHudService HardwareHud { get; }
 
     public bool IsExpanded => State == NotchState.Expanded;
 
@@ -107,6 +144,7 @@ public partial class MainViewModel : ObservableObject
         var aiService = new AiClientService();
         SystemStatus = new SystemStatusService();
         NotificationListener = new NotificationListenerService();
+        HardwareHud = new HardwareHudService();
 
         Media = new MediaViewModel(mediaService, lyricsService);
         Timer = new TimerViewModel();
@@ -118,7 +156,15 @@ public partial class MainViewModel : ObservableObject
 
         Timer.BadgeUpdated += badge => TimerBadge = badge;
         Shelf.ItemCountChanged += count => ShelfCount = count;
+        Shelf.QuickActionFeedback += (title, sub) => TriggerPeek(title, sub);
+        Shelf.SendToAiRequested += path =>
+        {
+            ActiveTab = NotchTab.AI;
+            RequestExpandToAi?.Invoke();
+            _ = AI.AnalyzeFileFromShelfAsync(path);
+        };
         AI.ExportToShelfRequested += path => Shelf.AddFiles(new[] { path });
+        HardwareHud.HudTriggered += OnHardwareHudTriggered;
 
         Water.ReminderFired += reminder =>
         {
@@ -173,11 +219,43 @@ public partial class MainViewModel : ObservableObject
             DismissActiveNotification();
         };
 
+        _hudTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(2.0)
+        };
+        _hudTimer.Tick += (s, e) =>
+        {
+            _hudTimer.Stop();
+            IsHardwareHudActive = false;
+            HardwareHudDismissed?.Invoke();
+        };
+
         var clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         clockTimer.Tick += (s, e) => CurrentTimeText = DateTime.Now.ToString("HH:mm");
         clockTimer.Start();
 
         _ = mediaService.InitializeAsync();
+    }
+
+    private void OnHardwareHudTriggered(HardwareHudEventArgs e)
+    {
+        HudTitle = e.Title;
+        HudValueText = e.ValueText;
+        HudPercentage = Math.Clamp(e.Percentage, 0, 100);
+        HudBarWidth = Math.Round((HudPercentage / 100.0) * 72.0, 1);
+
+        IsHudVolume = e.HudType == HardwareHudType.Volume;
+        IsHudVolumeMuted = e.HudType == HardwareHudType.VolumeMuted;
+        IsHudMicMuted = e.HudType == HardwareHudType.MicMuted;
+        IsHudMicUnmuted = e.HudType == HardwareHudType.MicUnmuted;
+        IsHudBrightness = e.HudType == HardwareHudType.Brightness;
+
+        IsHardwareHudActive = true;
+        IsMinimal = false;
+        HardwareHudTriggered?.Invoke();
+
+        _hudTimer.Stop();
+        _hudTimer.Start();
     }
 
     private void OnNotificationReceived(AppNotificationItem item)

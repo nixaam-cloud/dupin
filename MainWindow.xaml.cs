@@ -22,6 +22,8 @@ public partial class MainWindow : Window
     private const double MINIMAL_HEIGHT = 22;
     private const double COLLAPSED_WIDTH = 180;
     private const double COLLAPSED_HEIGHT = 32;
+    private const double HUD_WIDTH = 228;
+    private const double HUD_HEIGHT = 34;
     private const double NOTIFICATION_WIDTH = 320;
     private const double NOTIFICATION_HEIGHT = 38;
     private const double EXPANDED_WIDTH = 600;
@@ -29,9 +31,11 @@ public partial class MainWindow : Window
 
     private readonly DispatcherTimer _collapseTimer;
     private readonly DispatcherTimer _inactivityTimer;
+    private readonly DispatcherTimer _cursorMonitorTimer;
     private FullscreenDetector? _fullscreenDetector;
     private TrayIconManager? _trayManager;
     private IntPtr _hwnd = IntPtr.Zero;
+    private IntPtr _currentMonitorHandle = IntPtr.Zero;
     private bool _isExpanded = false;
     private bool _isMinimal = false;
     private bool _isForceHidden = false;
@@ -52,13 +56,21 @@ public partial class MainWindow : Window
         };
         _inactivityTimer.Tick += OnInactivityTimerTick;
 
+        // Multi-Monitor Cursor Tracking timer
+        _cursorMonitorTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(250)
+        };
+        _cursorMonitorTimer.Tick += OnCursorMonitorTimerTick;
+
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        UpdatePosition();
+        UpdatePosition(force: true);
+        _cursorMonitorTimer.Start();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
         if (DataContext is MainViewModel vm)
@@ -111,6 +123,40 @@ public partial class MainWindow : Window
                     if (!_isExpanded)
                     {
                         AnimateToCollapsed();
+                    }
+                });
+            };
+
+            vm.HardwareHudTriggered += () =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (!_isExpanded)
+                    {
+                        AnimateToHardwareHudPill();
+                    }
+                });
+            };
+
+            vm.HardwareHudDismissed += () =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (!_isExpanded)
+                    {
+                        AnimateToCollapsed();
+                    }
+                });
+            };
+
+            vm.RequestExpandToAi += () =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (AiTabButton != null) AiTabButton.IsChecked = true;
+                    if (!_isExpanded)
+                    {
+                        AnimateExpand();
                     }
                 });
             };
@@ -191,13 +237,31 @@ public partial class MainWindow : Window
         _trayManager = new TrayIconManager(this, _hwnd);
         _trayManager.Initialize();
         _trayManager.ToggleRequested += ToggleVisibilityOrExpand;
+
+        // Initialize Hardware HUD Interceptor (Volume, Mic-Mute, Brightness)
+        if (DataContext is MainViewModel vm)
+        {
+            vm.HardwareHud.Initialize(_hwnd);
+        }
     }
 
-    private void UpdatePosition()
+    private void OnCursorMonitorTimerTick(object? sender, EventArgs e)
     {
-        Point topCenter = ScreenHelper.GetTopCenterPosition(this.Width, 0);
-        this.Left = topCenter.X;
-        this.Top = topCenter.Y;
+        if (!_isExpanded && !NotchContainer.IsMouseOver)
+        {
+            UpdatePosition(force: false);
+        }
+    }
+
+    private void UpdatePosition(bool force = false)
+    {
+        Point topCenter = ScreenHelper.GetTopCenterPositionForCursor(this.Width, out IntPtr monHandle, 0);
+        if (force || (monHandle != IntPtr.Zero && monHandle != _currentMonitorHandle))
+        {
+            _currentMonitorHandle = monHandle;
+            this.Left = topCenter.X;
+            this.Top = topCenter.Y;
+        }
     }
 
     private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -211,6 +275,10 @@ public partial class MainWindow : Window
         {
             _trayManager?.ProcessTrayMessage(lParam);
             handled = true;
+        }
+        else if (DataContext is MainViewModel vm)
+        {
+            vm.HardwareHud.ProcessWindowMessage(msg, wParam, lParam);
         }
         return IntPtr.Zero;
     }
@@ -250,6 +318,13 @@ public partial class MainWindow : Window
 
     private void NotchContainer_MouseEnter(object sender, MouseEventArgs e)
     {
+        // Browser Tab-Drag Immunity: If the user is dragging a browser tab or window near the top of the screen
+        // (left mouse button already pressed when entering the notch), do NOT expand the notch.
+        if (ScreenHelper.IsLeftMouseButtonDown() || e.LeftButton == MouseButtonState.Pressed)
+        {
+            return;
+        }
+
         _collapseTimer.Stop();
         _inactivityTimer.Stop();
 
@@ -279,7 +354,7 @@ public partial class MainWindow : Window
         _inactivityTimer.Stop();
         if (!_isExpanded && !_isMinimal && !NotchContainer.IsMouseOver)
         {
-            if (DataContext is MainViewModel vm && !vm.Media.IsPlaying && !vm.IsPeeking && !vm.IsNotificationActive)
+            if (DataContext is MainViewModel vm && !vm.Media.IsPlaying && !vm.IsPeeking && !vm.IsNotificationActive && !vm.IsHardwareHudActive)
             {
                 AnimateToMinimal();
             }
@@ -301,7 +376,7 @@ public partial class MainWindow : Window
 
         if (DataContext is MainViewModel vm)
         {
-            if (vm.Media.IsPlaying || vm.IsPeeking || vm.IsNotificationActive) return;
+            if (vm.Media.IsPlaying || vm.IsPeeking || vm.IsNotificationActive || vm.IsHardwareHudActive) return;
             vm.IsMinimal = true;
         }
 
@@ -359,6 +434,35 @@ public partial class MainWindow : Window
         NotchContainer.BeginAnimation(HeightProperty, heightAnim);
 
         ResetInactivityTimer();
+    }
+
+    public void AnimateToHardwareHudPill()
+    {
+        _isMinimal = false;
+        if (DataContext is MainViewModel vm)
+        {
+            vm.IsMinimal = false;
+        }
+
+        var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var duration = TimeSpan.FromMilliseconds(200);
+
+        var widthAnim = new DoubleAnimation
+        {
+            To = HUD_WIDTH,
+            Duration = duration,
+            EasingFunction = cubicEase
+        };
+
+        var heightAnim = new DoubleAnimation
+        {
+            To = HUD_HEIGHT,
+            Duration = duration,
+            EasingFunction = cubicEase
+        };
+
+        NotchContainer.BeginAnimation(WidthProperty, widthAnim);
+        NotchContainer.BeginAnimation(HeightProperty, heightAnim);
     }
 
     public void AnimateToNotificationBanner()
@@ -648,6 +752,7 @@ public partial class MainWindow : Window
                 {
                     vm.Shelf.AddFiles(files);
                     vm.SelectTab("Shelf");
+                    if (ShelfTabButton != null) ShelfTabButton.IsChecked = true;
                 }
             }
             e.Handled = true;
@@ -658,6 +763,17 @@ public partial class MainWindow : Window
     {
         if (e.LeftButton == MouseButtonState.Pressed && sender is FrameworkElement elem && elem.DataContext is Models.ShelfItem item)
         {
+            // Do not start a drag-drop operation if the user is clicking one of the quick-action buttons on the card
+            if (e.OriginalSource is DependencyObject dep)
+            {
+                DependencyObject? cur = dep;
+                while (cur != null && cur != elem)
+                {
+                    if (cur is Button) return;
+                    cur = VisualTreeHelper.GetParent(cur);
+                }
+            }
+
             try
             {
                 var data = new DataObject(DataFormats.FileDrop, new[] { item.FilePath });
@@ -665,6 +781,47 @@ public partial class MainWindow : Window
             }
             catch { }
         }
+    }
+
+    private async void SnipScreenButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Temporarily hide the notch so it does not obstruct the screen region being snipped
+            this.Visibility = Visibility.Hidden;
+            await System.Threading.Tasks.Task.Delay(120);
+
+            var snipWindow = new ScreenSnipWindow();
+            bool? result = snipWindow.ShowDialog();
+
+            this.Visibility = Visibility.Visible;
+            if (!_isExpanded)
+            {
+                AnimateExpand();
+            }
+
+            if (result == true && snipWindow.CapturedPngBytes != null && snipWindow.CapturedPngBytes.Length > 0)
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.SelectTab("AI");
+                    if (AiTabButton != null) AiTabButton.IsChecked = true;
+
+                    string label = !string.IsNullOrEmpty(snipWindow.SavedTempFilePath)
+                        ? System.IO.Path.GetFileName(snipWindow.SavedTempFilePath)
+                        : $"ScreenSnip_{DateTime.Now:HHmmss}.png";
+
+                    vm.AI.AttachImage(
+                        snipWindow.CapturedPngBytes,
+                        "image/png",
+                        label,
+                        snipWindow.CapturedBitmap);
+
+                    await vm.AI.SendPromptAsync();
+                }
+            }
+        }
+        catch { }
     }
 
     private void AiProvider_Click(object sender, RoutedEventArgs e)
@@ -713,7 +870,7 @@ public partial class MainWindow : Window
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
     {
-        Dispatcher.BeginInvoke(new Action(UpdatePosition));
+        Dispatcher.BeginInvoke(new Action(() => UpdatePosition(force: true)));
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -721,12 +878,14 @@ public partial class MainWindow : Window
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         _collapseTimer.Stop();
         _inactivityTimer.Stop();
+        _cursorMonitorTimer.Stop();
         _fullscreenDetector?.Stop();
         _trayManager?.Dispose();
 
         if (DataContext is MainViewModel vm)
         {
             vm.SystemStatus.Dispose();
+            vm.HardwareHud.Dispose();
         }
 
         if (_hwnd != IntPtr.Zero)

@@ -74,25 +74,30 @@ public class AiClientService
         catch { }
     }
 
-    public async IAsyncEnumerable<string> StreamResponseAsync(string prompt, string provider, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<string> StreamResponseAsync(
+        string prompt,
+        string provider,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default,
+        byte[]? imageBytes = null,
+        string imageMimeType = "image/png")
     {
         if (provider.Equals("Claude", StringComparison.OrdinalIgnoreCase))
         {
-            await foreach (var chunk in StreamClaudeAsync(prompt, ct))
+            await foreach (var chunk in StreamClaudeAsync(prompt, imageBytes, imageMimeType, ct))
             {
                 yield return chunk;
             }
         }
         else if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
         {
-            await foreach (var chunk in StreamOpenAiAsync(prompt, ct))
+            await foreach (var chunk in StreamOpenAiAsync(prompt, imageBytes, imageMimeType, ct))
             {
                 yield return chunk;
             }
         }
         else
         {
-            await foreach (var chunk in StreamGeminiAsync(prompt, ct))
+            await foreach (var chunk in StreamGeminiAsync(prompt, imageBytes, imageMimeType, ct))
             {
                 yield return chunk;
             }
@@ -101,7 +106,11 @@ public class AiClientService
 
     public const string ThoughtPrefix = "\x01THOUGHT:";
 
-    private async IAsyncEnumerable<string> StreamGeminiAsync(string prompt, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    private async IAsyncEnumerable<string> StreamGeminiAsync(
+        string prompt,
+        byte[]? imageBytes,
+        string imageMimeType,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(GeminiApiKey))
         {
@@ -116,6 +125,17 @@ public class AiClientService
             "gemini-3.8-flash"
         };
 
+        object[] contentParts = (imageBytes != null && imageBytes.Length > 0)
+            ? new object[]
+            {
+                new { text = prompt },
+                new { inline_data = new { mime_type = imageMimeType, data = Convert.ToBase64String(imageBytes) } }
+            }
+            : new object[]
+            {
+                new { text = prompt }
+            };
+
         HttpResponseMessage? response = null;
         string? lastError = null;
 
@@ -127,7 +147,7 @@ public class AiClientService
                 {
                     contents = new[]
                     {
-                        new { parts = new[] { new { text = prompt } } }
+                        new { parts = contentParts }
                     },
                     generationConfig = new
                     {
@@ -142,7 +162,7 @@ public class AiClientService
                 {
                     contents = new[]
                     {
-                        new { parts = new[] { new { text = prompt } } }
+                        new { parts = contentParts }
                     },
                     generationConfig = new
                     {
@@ -248,7 +268,11 @@ public class AiClientService
         return results;
     }
 
-    private async IAsyncEnumerable<string> StreamClaudeAsync(string prompt, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    private async IAsyncEnumerable<string> StreamClaudeAsync(
+        string prompt,
+        byte[]? imageBytes,
+        string imageMimeType,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(ClaudeApiKey))
         {
@@ -257,6 +281,23 @@ public class AiClientService
         }
 
         string url = "https://api.anthropic.com/v1/messages";
+        object userContent = (imageBytes != null && imageBytes.Length > 0)
+            ? new object[]
+            {
+                new
+                {
+                    type = "image",
+                    source = new
+                    {
+                        type = "base64",
+                        media_type = imageMimeType,
+                        data = Convert.ToBase64String(imageBytes)
+                    }
+                },
+                new { type = "text", text = prompt }
+            }
+            : prompt;
+
         var payload = new
         {
             model = "claude-3-5-sonnet-20241022",
@@ -264,7 +305,7 @@ public class AiClientService
             stream = true,
             messages = new[]
             {
-                new { role = "user", content = prompt }
+                new { role = "user", content = userContent }
             }
         };
 
@@ -341,7 +382,11 @@ public class AiClientService
         return null;
     }
 
-    private async IAsyncEnumerable<string> StreamOpenAiAsync(string prompt, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    private async IAsyncEnumerable<string> StreamOpenAiAsync(
+        string prompt,
+        byte[]? imageBytes,
+        string imageMimeType,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(OpenAiApiKey))
         {
@@ -350,13 +395,28 @@ public class AiClientService
         }
 
         string url = "https://api.openai.com/v1/chat/completions";
+        object userContent = (imageBytes != null && imageBytes.Length > 0)
+            ? new object[]
+            {
+                new { type = "text", text = prompt },
+                new
+                {
+                    type = "image_url",
+                    image_url = new
+                    {
+                        url = $"data:{imageMimeType};base64,{Convert.ToBase64String(imageBytes)}"
+                    }
+                }
+            }
+            : prompt;
+
         var payload = new
         {
             model = "gpt-4o-mini",
             stream = true,
             messages = new[]
             {
-                new { role = "user", content = prompt }
+                new { role = "user", content = userContent }
             }
         };
 

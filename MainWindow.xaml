@@ -172,6 +172,65 @@
                         </StackPanel>
                     </Grid>
 
+                    <!-- Mode 1B: Fluid Hardware HUD Pill (Volume, Mic-Mute, Brightness) -->
+                    <Grid Visibility="{Binding IsHardwareHudActive, Converter={StaticResource BoolToVisConv}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Dynamic Hardware Icon -->
+                        <Border Grid.Column="0" Width="22" Height="22" CornerRadius="11"
+                                Background="#211A3A" BorderBrush="#8B5CF6" BorderThickness="1.2"
+                                VerticalAlignment="Center" Margin="0,0,7,0">
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconVolume}"
+                                      Fill="#A78BFA" Width="11" Height="11" Stretch="Uniform"
+                                      Visibility="{Binding IsHudVolume, Converter={StaticResource BoolToVisConv}}" />
+                                <Path Data="{StaticResource IconVolumeMute}"
+                                      Fill="#F87171" Width="11" Height="11" Stretch="Uniform"
+                                      Visibility="{Binding IsHudVolumeMuted, Converter={StaticResource BoolToVisConv}}" />
+                                <Path Data="{StaticResource IconMicMute}"
+                                      Fill="#F87171" Width="11" Height="11" Stretch="Uniform"
+                                      Visibility="{Binding IsHudMicMuted, Converter={StaticResource BoolToVisConv}}" />
+                                <Path Data="{StaticResource IconMic}"
+                                      Fill="#34D399" Width="11" Height="11" Stretch="Uniform"
+                                      Visibility="{Binding IsHudMicUnmuted, Converter={StaticResource BoolToVisConv}}" />
+                                <Path Data="{StaticResource IconSun}"
+                                      Fill="#FBBF24" Width="11" Height="11" Stretch="Uniform"
+                                      Visibility="{Binding IsHudBrightness, Converter={StaticResource BoolToVisConv}}" />
+                            </Grid>
+                        </Border>
+
+                        <!-- HUD Label -->
+                        <TextBlock Grid.Column="1" Text="{Binding HudTitle}"
+                                   FontSize="10" FontWeight="SemiBold" Foreground="#FFFFFF"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" />
+
+                        <!-- Fluid Progress Bar -->
+                        <Border Grid.Column="2" Width="72" Height="5" CornerRadius="2.5"
+                                Background="#2A2A38" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                ClipToBounds="True">
+                            <Border HorizontalAlignment="Left"
+                                    Width="{Binding HudBarWidth}"
+                                    Height="5" CornerRadius="2.5">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#8B5CF6" Offset="0" />
+                                        <GradientStop Color="#38BDF8" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                        </Border>
+
+                        <!-- HUD Value / Percentage -->
+                        <TextBlock Grid.Column="3" Text="{Binding HudValueText}"
+                                   FontSize="9.5" FontWeight="Bold" Foreground="#DDD6FE"
+                                   VerticalAlignment="Center" Margin="8,0,0,0" />
+                    </Grid>
+
                     <!-- Mode 2: Normal Collapsed Pill (When not Notification and not Peeking) -->
                     <Grid Visibility="{Binding IsNormalCollapsed, Converter={StaticResource BoolToVisConv}}">
                         <!-- 2A: Resting Mascot Mode (when no media is playing and idle) -->
@@ -594,7 +653,8 @@
                             </RadioButton>
 
                             <!-- File Shelf Tab -->
-                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                            <RadioButton x:Name="ShelfTabButton"
+                                         Style="{StaticResource NotchTabButtonStyle}"
                                          Click="TabButton_Click"
                                          Tag="Shelf"
                                          VerticalAlignment="Center"
@@ -608,7 +668,8 @@
                             </RadioButton>
 
                             <!-- AI Assistant Tab -->
-                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                            <RadioButton x:Name="AiTabButton"
+                                         Style="{StaticResource NotchTabButtonStyle}"
                                          Click="TabButton_Click"
                                          Tag="AI"
                                          VerticalAlignment="Center"
@@ -622,7 +683,8 @@
                             </RadioButton>
 
                             <!-- Alerts / Notifications Tab -->
-                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                            <RadioButton x:Name="AlertsTabButton"
+                                         Style="{StaticResource NotchTabButtonStyle}"
                                          Click="TabButton_Click"
                                          Tag="Notifications"
                                          VerticalAlignment="Center"
@@ -1648,7 +1710,7 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border Width="110" Height="82"
+                                                    <Border Width="124" Height="84"
                                                             Margin="0,0,8,0"
                                                             Background="#1F1F27"
                                                             BorderBrush="{StaticResource NotchBorderBrush}"
@@ -1656,8 +1718,26 @@
                                                             CornerRadius="10"
                                                             Padding="6"
                                                             Cursor="Hand"
-                                                            ToolTip="Click and drag out to share"
+                                                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            ToolTip="Right-click for Quick Actions • Click and drag out to share"
                                                             PreviewMouseMove="ShelfItem_PreviewMouseMove">
+                                                        <Border.ContextMenu>
+                                                            <ContextMenu Background="#181822" Foreground="#FFFFFF" BorderBrush="#383850" BorderThickness="1">
+                                                                <MenuItem Header="📋 Copy File Content"
+                                                                          Command="{Binding PlacementTarget.Tag.Shelf.CopyFileContentCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                <MenuItem Header="🗜️ Compress to Zip"
+                                                                          Command="{Binding PlacementTarget.Tag.Shelf.CompressToZipCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                <MenuItem Header="✨ Send to AI Vision/Analysis"
+                                                                          Command="{Binding PlacementTarget.Tag.Shelf.SendToAiAnalysisCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                <Separator Background="#2D2D40" />
+                                                                <MenuItem Header="🗑️ Remove from Shelf"
+                                                                          Command="{Binding PlacementTarget.Tag.Shelf.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                            </ContextMenu>
+                                                        </Border.ContextMenu>
                                                         <Grid>
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition Height="Auto" />
@@ -1665,28 +1745,55 @@
                                                                 <RowDefinition Height="Auto" />
                                                             </Grid.RowDefinitions>
 
-                                                            <!-- Item Icon & Delete Button -->
+                                                            <!-- Item Icon & Quick Action Mini-Toolbar -->
                                                             <Grid Grid.Row="0">
                                                                 <Image Source="{Binding Icon}"
-                                                                       Width="26" Height="26"
+                                                                       Width="24" Height="24"
                                                                        HorizontalAlignment="Left" />
-                                                                <Button Style="{StaticResource NotchIconButtonStyle}"
-                                                                        Width="18" Height="18"
-                                                                        Padding="2"
-                                                                        HorizontalAlignment="Right"
-                                                                        Command="{Binding DataContext.Shelf.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                        CommandParameter="{Binding}"
-                                                                        ToolTip="Remove from shelf">
-                                                                    <Path Data="{StaticResource IconClose}"
-                                                                          Fill="{StaticResource TextMutedBrush}"
-                                                                          Width="8" Height="8" Stretch="Uniform" />
-                                                                </Button>
+                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                                            Width="18" Height="18" Padding="2" Margin="0,0,1,0"
+                                                                            Command="{Binding DataContext.Shelf.CopyFileContentCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}"
+                                                                            ToolTip="Copy File Content">
+                                                                        <Path Data="{StaticResource IconCopy}"
+                                                                              Fill="{StaticResource TextSecondaryBrush}"
+                                                                              Width="8.5" Height="8.5" Stretch="Uniform" />
+                                                                    </Button>
+                                                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                                            Width="18" Height="18" Padding="2" Margin="0,0,1,0"
+                                                                            Command="{Binding DataContext.Shelf.CompressToZipCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}"
+                                                                            ToolTip="Compress to Zip">
+                                                                        <Path Data="{StaticResource IconZip}"
+                                                                              Fill="#38BDF8"
+                                                                              Width="8.5" Height="8.5" Stretch="Uniform" />
+                                                                    </Button>
+                                                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                                            Width="18" Height="18" Padding="2" Margin="0,0,1,0"
+                                                                            Command="{Binding DataContext.Shelf.SendToAiAnalysisCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}"
+                                                                            ToolTip="Send to AI Vision / Analysis">
+                                                                        <Path Data="{StaticResource IconSparkle}"
+                                                                              Fill="#A78BFA"
+                                                                              Width="8.5" Height="8.5" Stretch="Uniform" />
+                                                                    </Button>
+                                                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                                            Width="18" Height="18" Padding="2"
+                                                                            Command="{Binding DataContext.Shelf.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}"
+                                                                            ToolTip="Remove from shelf">
+                                                                        <Path Data="{StaticResource IconClose}"
+                                                                              Fill="{StaticResource TextMutedBrush}"
+                                                                              Width="7.5" Height="7.5" Stretch="Uniform" />
+                                                                    </Button>
+                                                                </StackPanel>
                                                             </Grid>
 
                                                             <!-- File Name -->
                                                             <TextBlock Grid.Row="1"
                                                                        Text="{Binding FileName}"
-                                                                       FontSize="11" FontWeight="Medium"
+                                                                       FontSize="10.5" FontWeight="Medium"
                                                                        Foreground="{StaticResource TextPrimaryBrush}"
                                                                        TextTrimming="CharacterEllipsis"
                                                                        VerticalAlignment="Center"
@@ -1706,7 +1813,7 @@
 
                                     <!-- Bottom Shelf Actions -->
                                     <Grid Grid.Row="1" Margin="0,4,0,0">
-                                        <TextBlock Text="{Binding Shelf.ItemCount, StringFormat='{}{0} item(s) parked • Drag out to copy'}"
+                                        <TextBlock Text="{Binding Shelf.ItemCount, StringFormat='{}{0} item(s) • Right-click for Copy Content, Zip, or AI Vision'}"
                                                    FontSize="10" Foreground="{StaticResource TextMutedBrush}"
                                                    VerticalAlignment="Center" />
                                         <Button Content="Clear All"
@@ -1753,8 +1860,19 @@
                                                      Tag="OpenAI" />
                                     </StackPanel>
 
-                                    <!-- Right: Action buttons (Copy, Shelf, Settings) -->
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <!-- Right: Action buttons (Screen Snip, Copy, Shelf, Settings) -->
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <Button Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                Padding="7,2" FontSize="9.5" Margin="0,0,5,0"
+                                                Click="SnipScreenButton_Click"
+                                                ToolTip="AI Screen Snip: Drag a marquee over any screen area to analyze with Vision AI">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="{StaticResource IconSnip}"
+                                                      Fill="#FFFFFF"
+                                                      Width="9.5" Height="9.5" Stretch="Uniform" Margin="0,0,4,0" />
+                                                <TextBlock Text="Snip Screen" FontSize="9.5" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                            </StackPanel>
+                                        </Button>
                                         <Button Style="{StaticResource NotchIconButtonStyle}"
                                                 Width="22" Height="22" Padding="3"
                                                 Command="{Binding AI.CopyResponseCommand}"
@@ -1850,6 +1968,37 @@
                                             </Style>
                                         </ScrollViewer.Style>
                                         <StackPanel>
+                                            <!-- Attached Vision / Screen Snip Preview Card -->
+                                            <Border Background="#181528"
+                                                    BorderBrush="#6D28D9"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="6,4"
+                                                    Margin="0,0,0,5"
+                                                    Visibility="{Binding AI.HasAttachedImage, Converter={StaticResource BoolToVisConv}}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Width="36" Height="24" CornerRadius="4" ClipToBounds="True"
+                                                            Background="#12121A" BorderBrush="#4C1D95" BorderThickness="1" Margin="0,0,8,0">
+                                                        <Image Source="{Binding AI.AttachedImagePreview}" Stretch="UniformToFill" />
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="📸 Vision Image Attached" FontSize="9" FontWeight="Bold" Foreground="#C4B5FD" />
+                                                        <TextBlock Text="{Binding AI.AttachedImageLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2" Style="{StaticResource NotchIconButtonStyle}"
+                                                            Width="18" Height="18" Padding="2"
+                                                            Command="{Binding AI.ClearAttachmentCommand}"
+                                                            ToolTip="Remove attached image">
+                                                        <Path Data="{StaticResource IconClose}" Fill="{StaticResource TextMutedBrush}" Width="8" Height="8" Stretch="Uniform" />
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+
                                             <!-- Live Thinking / Streaming Indicator Banner -->
                                             <Border Background="#1B172C"
                                                     BorderBrush="#4C1D95"

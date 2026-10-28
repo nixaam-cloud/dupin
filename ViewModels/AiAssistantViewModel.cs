@@ -4,6 +4,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WindowsNotch.Services;
@@ -14,12 +16,14 @@ public partial class AiAssistantViewModel : ObservableObject
 {
     private readonly AiClientService _aiService;
     private CancellationTokenSource? _cts;
+    private byte[]? _attachedImageBytes;
+    private string _attachedMimeType = "image/png";
 
     [ObservableProperty]
     private string _prompt = string.Empty;
 
     [ObservableProperty]
-    private string _responseText = "Ask Gemini, Claude, or OpenAI anything...";
+    private string _responseText = "Ask Gemini, Claude, or OpenAI anything — or click ✂️ Snip to analyze any screen region!";
 
     [ObservableProperty]
     private bool _isStreaming = false;
@@ -32,6 +36,15 @@ public partial class AiAssistantViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _hasThinkingText = false;
+
+    [ObservableProperty]
+    private ImageSource? _attachedImagePreview;
+
+    [ObservableProperty]
+    private bool _hasAttachedImage = false;
+
+    [ObservableProperty]
+    private string _attachedImageLabel = string.Empty;
 
     [ObservableProperty]
     private string _selectedProvider = "Gemini";
@@ -69,6 +82,87 @@ public partial class AiAssistantViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public void ClearAttachment()
+    {
+        _attachedImageBytes = null;
+        AttachedImagePreview = null;
+        HasAttachedImage = false;
+        AttachedImageLabel = string.Empty;
+    }
+
+    public void AttachImage(byte[] imageBytes, string mimeType, string label, ImageSource? preview)
+    {
+        _attachedImageBytes = imageBytes;
+        _attachedMimeType = mimeType;
+        AttachedImageLabel = label;
+        AttachedImagePreview = preview;
+        HasAttachedImage = true;
+    }
+
+    public async Task AnalyzeFileFromShelfAsync(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath)) return;
+
+        try
+        {
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            string fileName = Path.GetFileName(filePath);
+
+            if (ext is ".png" or ".jpg" or ".jpeg" or ".webp" or ".bmp" or ".gif")
+            {
+                byte[] bytes = await File.ReadAllBytesAsync(filePath);
+                string mime = ext switch
+                {
+                    ".jpg" or ".jpeg" => "image/jpeg",
+                    ".webp" => "image/webp",
+                    ".gif" => "image/gif",
+                    ".bmp" => "image/bmp",
+                    _ => "image/png"
+                };
+
+                BitmapImage? bmp = null;
+                try
+                {
+                    bmp = new BitmapImage();
+                    using var ms = new MemoryStream(bytes);
+                    bmp.BeginInit();
+                    bmp.CacheOption = BitmapCacheOption.OnLoad;
+                    bmp.StreamSource = ms;
+                    bmp.EndInit();
+                    bmp.Freeze();
+                }
+                catch { }
+
+                AttachImage(bytes, mime, fileName, bmp);
+                if (string.IsNullOrWhiteSpace(Prompt))
+                {
+                    Prompt = $"Analyze this image ({fileName}): describe what is shown, extract any key text/code, and provide helpful insights.";
+                }
+                await SendPromptAsync();
+            }
+            else if (File.Exists(filePath))
+            {
+                ClearAttachment();
+                var fi = new FileInfo(filePath);
+                string snippet;
+                using (var sr = new StreamReader(filePath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+                {
+                    char[] buf = new char[12000];
+                    int read = await sr.ReadAsync(buf, 0, buf.Length);
+                    snippet = new string(buf, 0, read);
+                }
+
+                Prompt = $"Analyze the file '{fileName}' ({fi.Length} bytes):\n\n```\n{snippet}\n```";
+                await SendPromptAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            ResponseText = $"Could not analyze file: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
     public void CancelStream()
     {
         _cts?.Cancel();
@@ -77,9 +171,15 @@ public partial class AiAssistantViewModel : ObservableObject
     [RelayCommand]
     public async Task SendPromptAsync()
     {
-        if (string.IsNullOrWhiteSpace(Prompt) || IsStreaming) return;
+        if ((string.IsNullOrWhiteSpace(Prompt) && _attachedImageBytes == null) || IsStreaming) return;
 
-        string currentPrompt = Prompt.Trim();
+        string currentPrompt = string.IsNullOrWhiteSpace(Prompt)
+            ? "Analyze this screen snip: describe what you see, extract any text or errors, and explain or solve it concisely."
+            : Prompt.Trim();
+
+        byte[]? currentImageBytes = _attachedImageBytes;
+        string currentMime = _attachedMimeType;
+
         Prompt = string.Empty;
         ResponseText = string.Empty;
         ThinkingText = string.Empty;
@@ -92,7 +192,9 @@ public partial class AiAssistantViewModel : ObservableObject
         var token = _cts.Token;
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        string phase = $"Thinking with {SelectedProvider}";
+        string phase = currentImageBytes != null
+            ? $"Vision Analysis ({SelectedProvider})"
+            : $"Thinking with {SelectedProvider}";
         StatusText = $"{phase}... 0.0s";
 
         // Background ticker to update live elapsed time while thinking/streaming
@@ -121,7 +223,7 @@ public partial class AiAssistantViewModel : ObservableObject
             var answerSb = new StringBuilder();
             var thoughtSb = new StringBuilder();
 
-            await foreach (var chunk in _aiService.StreamResponseAsync(currentPrompt, SelectedProvider, token))
+            await foreach (var chunk in _aiService.StreamResponseAsync(currentPrompt, SelectedProvider, token, currentImageBytes, currentMime))
             {
                 if (chunk.StartsWith(AiClientService.ThoughtPrefix, StringComparison.Ordinal))
                 {
