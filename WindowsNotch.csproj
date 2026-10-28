@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <AssemblyName>Dupin</AssemblyName>
+    <Product>Dupin</Product>
+    <Title>Dupin</Title>
+    <Company>Dupin</Company>
+    <Description>Dupin — Smart Dynamic Island &amp; AI Companion for Windows</Description>
+    <Copyright>Copyright © 2026 Dupin</Copyright>
+    <Version>1.0.0</Version>
+    <ApplicationIcon>Resources\dupin.ico</ApplicationIcon>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\dupin.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,1695 @@
+<Window x:Class="WindowsNotch.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:WindowsNotch.ViewModels"
+        mc:Ignorable="d"
+        Title="Dupin"
+        Icon="pack://application:,,,/Resources/dupin.ico"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Width="620"
+        Height="248"
+        WindowStartupLocation="Manual">
+
+    <Window.DataContext>
+        <vm:MainViewModel x:Name="ViewModel" />
+    </Window.DataContext>
+
+    <!-- Outer Canvas / Grid with hit test transparency -->
+    <Grid Background="Transparent">
+        <!-- Floating Notch Container -->
+        <Border x:Name="NotchContainer"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Width="180"
+                Height="32"
+                CornerRadius="0,0,16,16"
+                Background="{StaticResource NotchBackgroundBrush}"
+                BorderBrush="{StaticResource PillBorderGradientBrush}"
+                BorderThickness="1,0,1,1"
+                SnapsToDevicePixels="True"
+                Cursor="Arrow"
+                AllowDrop="True"
+                Drop="NotchContainer_Drop"
+                PreviewDragOver="NotchContainer_PreviewDragOver"
+                MouseEnter="NotchContainer_MouseEnter"
+                MouseLeave="NotchContainer_MouseLeave">
+
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="18"
+                                  Color="#000000"
+                                  Opacity="0.65"
+                                  ShadowDepth="4"
+                                  Direction="270" />
+            </Border.Effect>
+
+            <Grid ClipToBounds="True">
+                <!-- ==================== COLLAPSED PILL VIEW ==================== -->
+                <Grid x:Name="CollapsedContent"
+                      Opacity="1"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Stretch"
+                      Margin="10,0,10,0">
+
+                    <!-- Mode 0: Windows System & App Notification (Dynamic Island reaction with Alert Mascot Eyes) -->
+                    <Grid Visibility="{Binding IsNotificationActive, Converter={StaticResource BoolToVisConv}}"
+                          Cursor="Hand"
+                          MouseDown="NotificationBanner_MouseDown">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: Alert Reactive Mascot Face -->
+                        <Border Grid.Column="0" Width="26" Height="22" CornerRadius="11"
+                                Background="#22163B" BorderBrush="#A78BFA" BorderThickness="1.5"
+                                VerticalAlignment="Center" Margin="0,0,7,0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- Notif Mascot Left Eye -->
+                                <Border Width="4" Height="7" CornerRadius="2" Background="#FFFFFF" Margin="0,0,3,0">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#C4B5FD" BlurRadius="5" ShadowDepth="0" Opacity="0.95" />
+                                    </Border.Effect>
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="NotifLeftEyeScale" CenterY="3.5" />
+                                    </Border.RenderTransform>
+                                    <Border.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="NotifLeftEyeScale" Storyboard.TargetProperty="ScaleY">
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:1.8" Value="1.0" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:1.95" Value="0.1" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:2.1" Value="1.0" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Border.Triggers>
+                                </Border>
+
+                                <!-- Notif Mascot Right Eye -->
+                                <Border Width="4" Height="7" CornerRadius="2" Background="#FFFFFF">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#C4B5FD" BlurRadius="5" ShadowDepth="0" Opacity="0.95" />
+                                    </Border.Effect>
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="NotifRightEyeScale" CenterY="3.5" />
+                                    </Border.RenderTransform>
+                                    <Border.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="NotifRightEyeScale" Storyboard.TargetProperty="ScaleY">
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:1.8" Value="1.0" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:1.95" Value="0.1" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:2.1" Value="1.0" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Border.Triggers>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Center: App Name + Title & Message Preview -->
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Background="#3B2667" CornerRadius="4" Padding="4,1" Margin="0,0,5,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding ActiveNotification.AppName}"
+                                               FontSize="8.5" FontWeight="Bold" Foreground="#DDD6FE" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="{Binding ActiveNotification.Title}"
+                                           FontSize="9.5" FontWeight="SemiBold" Foreground="#FFFFFF"
+                                           TextTrimming="CharacterEllipsis" MaxWidth="195" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding ActiveNotification.Message}"
+                                       FontSize="8.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextTrimming="CharacterEllipsis" MaxWidth="225" Margin="0,1,0,0" />
+                        </StackPanel>
+
+                        <!-- Right: Close Button -->
+                        <Button Grid.Column="2"
+                                Style="{StaticResource NotchIconButtonStyle}"
+                                Width="18" Height="18"
+                                Padding="3"
+                                ToolTip="Dismiss"
+                                VerticalAlignment="Center"
+                                Command="{Binding DismissActiveNotificationCommand}">
+                            <Path Data="{StaticResource IconClose}"
+                                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Width="7" Height="7" Stretch="Uniform" />
+                        </Button>
+                    </Grid>
+
+                    <!-- Mode 1: Peek Notification (Charging / CapsLock / Water reminder) -->
+                    <Grid Visibility="{Binding IsPeeking, Converter={StaticResource BoolToVisConv}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="18" Height="18" CornerRadius="9"
+                                Background="#1A2D40" BorderBrush="#38BDF8" BorderThickness="1.5"
+                                VerticalAlignment="Center" Margin="0,0,8,0">
+                            <Path Data="{StaticResource IconCharging}"
+                                  Fill="#38BDF8" Width="9" Height="9" Stretch="Uniform" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding PeekTitle}" FontSize="10" FontWeight="Bold"
+                                       Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding PeekSubtitle}" FontSize="8.5"
+                                       Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Mode 2: Normal Collapsed Pill (When not Notification and not Peeking) -->
+                    <Grid Visibility="{Binding IsNormalCollapsed, Converter={StaticResource BoolToVisConv}}">
+                        <!-- 2A: Resting Mascot Mode (when no media is playing and idle) -->
+                        <Grid Visibility="{Binding IsRestingMascot, Converter={StaticResource BoolToVisConv}}"
+                              Cursor="Hand"
+                              MouseDown="MascotEyes_MouseDown">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left: Tiny battery status pill (hidden in minimal mode) -->
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
+                                        Visibility="{Binding IsMinimal, Converter={StaticResource InverseBoolToVisConv}}">
+                                <Border Width="8" Height="8" CornerRadius="4"
+                                        BorderBrush="#33E07A" BorderThickness="1.5" Background="#103320"
+                                        Margin="0,0,3,0" ToolTip="Battery Status" />
+                                <TextBlock Text="{Binding BatteryPercent, StringFormat='{}{0}%'}"
+                                           FontSize="9" FontWeight="Medium" Foreground="{StaticResource TextMutedBrush}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <!-- Center: Cute Mascot Eyes with smooth blink and soft doze animation! -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- Left Eye -->
+                                <Border x:Name="LeftEyeBorder" Width="5" Height="9" CornerRadius="2.5" Background="#FFFFFF" Margin="0,0,7,0">
+                                    <Border.Effect>
+                                        <DropShadowEffect x:Name="LeftEyeGlow" Color="#78BEFF" BlurRadius="6" ShadowDepth="0" Opacity="0.85" />
+                                    </Border.Effect>
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="LeftEyeScale" CenterX="2.5" CenterY="4.5" />
+                                    </Border.RenderTransform>
+                                    <Border.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="LeftEyeScale" Storyboard.TargetProperty="ScaleY">
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:3.8" Value="1.0" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:3.95" Value="0.1" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:4.1" Value="1.0" />
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:7.0" Value="1.0" />
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:7.5" Value="0.25" KeySpline="0.4,0,0.2,1" />
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:9.0" Value="0.25" KeySpline="0.4,0,0.2,1" />
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:9.4" Value="1.0" KeySpline="0.4,0,0.2,1" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Border.Triggers>
+                                </Border>
+
+                                <!-- Right Eye -->
+                                <Border x:Name="RightEyeBorder" Width="5" Height="9" CornerRadius="2.5" Background="#FFFFFF">
+                                    <Border.Effect>
+                                        <DropShadowEffect x:Name="RightEyeGlow" Color="#78BEFF" BlurRadius="6" ShadowDepth="0" Opacity="0.85" />
+                                    </Border.Effect>
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="RightEyeScale" CenterX="2.5" CenterY="4.5" />
+                                    </Border.RenderTransform>
+                                    <Border.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RightEyeScale" Storyboard.TargetProperty="ScaleY">
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:3.8" Value="1.0" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:3.95" Value="0.1" />
+                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:4.1" Value="1.0" />
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:7.0" Value="1.0" />
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:7.5" Value="0.25" KeySpline="0.4,0,0.2,1" />
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:9.0" Value="0.25" KeySpline="0.4,0,0.2,1" />
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:9.4" Value="1.0" KeySpline="0.4,0,0.2,1" />
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Border.Triggers>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Right: Time / Clock (hidden in minimal mode) -->
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding CurrentTimeText}"
+                                       FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding IsMinimal, Converter={StaticResource InverseBoolToVisConv}}" />
+                        </Grid>
+
+                        <!-- 2B: Active Media / Music Pill (when playing media) -->
+                        <Grid Visibility="{Binding IsRestingMascot, Converter={StaticResource InverseBoolToVisConv}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left: Pulsing Green Dot + Mini Waveform -->
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Width="6" Height="6" CornerRadius="3"
+                                        Background="#10B981"
+                                        VerticalAlignment="Center" Margin="0,0,6,0">
+                                    <Border.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0.4" To="1.0" Duration="0:0:1" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Border.Triggers>
+                                </Border>
+                                <Path Data="{StaticResource IconWaveform}"
+                                      Fill="{StaticResource AccentLightBrush}"
+                                      Width="11" Height="11" Stretch="Uniform" />
+                            </StackPanel>
+
+                            <!-- Center: Track Title Ticker -->
+                            <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="6,0,6,0">
+                                <TextBlock Text="{Binding Media.TrackTitle}"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxWidth="85"
+                                           Opacity="0.9" />
+                            </Grid>
+
+                            <!-- Right: Mini Timer / Badge -->
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconTimer}"
+                                      Fill="{StaticResource TextMutedBrush}"
+                                      Width="11" Height="11"
+                                      Stretch="Uniform"
+                                      Margin="0,0,3,0" />
+                                <TextBlock Text="{Binding TimerBadge}"
+                                           FontSize="10"
+                                           FontWeight="Medium"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Grid>
+
+                <!-- ==================== EXPANDED COMPANION VIEW ==================== -->
+                <Grid x:Name="ExpandedContent"
+                      Opacity="0"
+                      Visibility="Collapsed"
+                      Margin="14,10,14,12">
+                    <Grid.RenderTransform>
+                        <TranslateTransform x:Name="ExpandedTransform" Y="-10" />
+                    </Grid.RenderTransform>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Bar: Navigation Tabs & Actions -->
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Module Selector Tabs -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Media Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         IsChecked="True"
+                                         Click="TabButton_Click"
+                                         Tag="Media"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconWaveform}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Media" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- Lyrics Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Lyrics"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconLyrics}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Lyrics" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- Timer Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Timer"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconTimer}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Focus" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- Water Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Water"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconWater}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Water" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- Tasks / Todo Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Todo"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconTodo}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Tasks" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- File Shelf Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Shelf"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconShelf}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Shelf" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- AI Assistant Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="AI"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconSparkle}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="AI" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- Alerts / Notifications Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Notifications"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconBell}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Alerts" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                    <Border Margin="4,0,0,0" Background="#8B5CF6" CornerRadius="6" Padding="4,0"
+                                            VerticalAlignment="Center"
+                                            Visibility="{Binding NotificationCount, Converter={StaticResource GreaterThanZeroToVisConv}}">
+                                        <TextBlock Text="{Binding NotificationCount}" FontSize="8.5" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                            </RadioButton>
+                        </StackPanel>
+
+                        <!-- Right: Battery & Quick Collapse Button -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Battery status pill -->
+                            <Border Background="#1C1C24" CornerRadius="10" Padding="6,2" Margin="0,0,5,0"
+                                    BorderBrush="{StaticResource NotchBorderBrush}" BorderThickness="1"
+                                    VerticalAlignment="Center"
+                                    ToolTip="System Power Status">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconCharging}"
+                                          Fill="#33E07A" Width="9" Height="9" Stretch="Uniform" Margin="0,0,4,0"
+                                          VerticalAlignment="Center"
+                                          Visibility="{Binding IsCharging, Converter={StaticResource BoolToVisConv}}" />
+                                    <Path Data="{StaticResource IconBattery}"
+                                          Fill="#33E07A" Width="9" Height="9" Stretch="Uniform" Margin="0,0,4,0"
+                                          VerticalAlignment="Center"
+                                          Visibility="{Binding IsCharging, Converter={StaticResource InverseBoolToVisConv}}" />
+                                    <TextBlock Text="{Binding BatteryPercent, StringFormat='{}{0}%'}"
+                                               FontSize="10" FontWeight="SemiBold" Foreground="#ECEFF7"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
+                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                    Width="24" Height="24"
+                                    Padding="4"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Collapse (Win+Ctrl+N)"
+                                    Click="CollapseButton_Click">
+                                <Path Data="{StaticResource IconClose}"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Width="9" Height="9"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Main Dynamic Content Region -->
+                    <Border Grid.Row="1"
+                            Background="{StaticResource NotchCardBackgroundBrush}"
+                            CornerRadius="14"
+                            BorderBrush="{StaticResource NotchBorderBrush}"
+                            BorderThickness="1"
+                            Padding="12,8">
+                        <Grid x:Name="TabContentHost">
+                            <!-- ==================== MODULE A: MEDIA PLAYER ==================== -->
+                            <Grid x:Name="MediaTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Media}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Top Row: Album Art + Track Info + Transport -->
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="62" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Album Art Thumbnail with Glow / Placeholder -->
+                                    <Border Grid.Column="0"
+                                            Width="56" Height="56"
+                                            CornerRadius="10"
+                                            ClipToBounds="True"
+                                            Background="#202028"
+                                            BorderBrush="{StaticResource NotchBorderBrush}"
+                                            BorderThickness="1"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center">
+                                        <Grid>
+                                            <Image Source="{Binding Media.AlbumArt}"
+                                                   Stretch="UniformToFill"
+                                                   Visibility="{Binding Media.AlbumArt, Converter={StaticResource NullToVisConv}}" />
+                                            <Path Data="{StaticResource IconWaveform}"
+                                                  Fill="{StaticResource AccentLightBrush}"
+                                                  Width="22" Height="22"
+                                                  Stretch="Uniform"
+                                                  Opacity="0.7"
+                                                  Visibility="{Binding Media.AlbumArt, Converter={StaticResource InverseNullToVisConv}}" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Track Title, Artist, & Transport Buttons -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                                        <TextBlock Text="{Binding Media.TrackTitle}"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Media.ArtistName}"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Margin="0,1,0,6"
+                                                   TextTrimming="CharacterEllipsis" />
+
+                                        <!-- Controls Row -->
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <!-- Previous Track -->
+                                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="28" Height="28"
+                                                    Padding="0"
+                                                    Margin="0,0,5,0"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding Media.SkipPreviousCommand}"
+                                                    ToolTip="Previous Track">
+                                                <Path Data="{StaticResource IconSkipPrev}"
+                                                      Fill="{StaticResource TextSecondaryBrush}"
+                                                      Width="11" Height="11" Stretch="Uniform"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Button>
+
+                                            <!-- Play / Pause Button -->
+                                            <Button Width="32" Height="32"
+                                                    Padding="0"
+                                                    Margin="0,0,5,0"
+                                                    Cursor="Hand"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding Media.TogglePlayPauseCommand}"
+                                                    ToolTip="Play / Pause">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="playBtnBorder"
+                                                                Width="32" Height="32" CornerRadius="16"
+                                                                Background="{StaticResource AccentBrush}"
+                                                                SnapsToDevicePixels="True">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="playBtnBorder" Property="Opacity" Value="0.88" />
+                                                            </Trigger>
+                                                            <Trigger Property="IsPressed" Value="True">
+                                                                <Setter TargetName="playBtnBorder" Property="Opacity" Value="0.75" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <!-- Pause Icon when Playing -->
+                                                    <Path Data="{StaticResource IconPause}"
+                                                          Fill="#FFFFFF"
+                                                          Width="12" Height="12"
+                                                          Stretch="Uniform"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          Visibility="{Binding Media.IsPlaying, Converter={StaticResource BoolToVisConv}}" />
+                                                    <!-- Play Icon when Paused -->
+                                                    <Path Data="{StaticResource IconPlay}"
+                                                          Fill="#FFFFFF"
+                                                          Width="12" Height="12"
+                                                          Stretch="Uniform"
+                                                          Margin="2,0,0,0"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center">
+                                                        <Path.Style>
+                                                            <Style TargetType="Path">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Media.IsPlaying}" Value="False">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Path.Style>
+                                                    </Path>
+                                                </Grid>
+                                            </Button>
+
+                                            <!-- Next Track -->
+                                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="28" Height="28"
+                                                    Padding="0"
+                                                    Margin="0,0,8,0"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding Media.SkipNextCommand}"
+                                                    ToolTip="Next Track">
+                                                <Path Data="{StaticResource IconSkipNext}"
+                                                      Fill="{StaticResource TextSecondaryBrush}"
+                                                      Width="11" Height="11" Stretch="Uniform"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Button>
+
+                                            <!-- Real-Time Lyric Preview Teaser -->
+                                            <TextBlock Text="{Binding Media.CurrentLyricText}"
+                                                       FontSize="10"
+                                                       FontStyle="Italic"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="12,0,0,0"
+                                                       MaxWidth="180"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Bottom Row: Timeline Progress -->
+                                <Grid Grid.Row="1" Margin="0,6,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="34" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="34" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Media.PositionText}"
+                                               FontSize="10"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Left" />
+
+                                    <ProgressBar Grid.Column="1"
+                                                 Value="{Binding Media.Progress}"
+                                                 Minimum="0" Maximum="100"
+                                                 Height="4"
+                                                 Foreground="{StaticResource AccentLightBrush}"
+                                                 Background="#252530"
+                                                 BorderThickness="0"
+                                                 Margin="6,0,6,0" />
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding Media.DurationText}"
+                                               FontSize="10"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Right" />
+                                </Grid>
+                            </Grid>
+
+                            <!-- ==================== MODULE A: SYNCED LYRICS ==================== -->
+                            <Grid x:Name="LyricsTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Lyrics}">
+                                <!-- Empty / Loading State -->
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Media.HasLyrics}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <Path Data="{StaticResource IconLyrics}"
+                                          Fill="{StaticResource TextMutedBrush}"
+                                          Width="24" Height="24"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Center"
+                                          Margin="0,0,0,6" />
+                                    <TextBlock Text="{Binding Media.CurrentLyricText}"
+                                               FontSize="11"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               HorizontalAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- Synced Lyrics Real-Time Scrolling List -->
+                                <ScrollViewer x:Name="LyricsScrollViewer"
+                                              VerticalScrollBarVisibility="Hidden"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              Focusable="False">
+                                    <ScrollViewer.Style>
+                                        <Style TargetType="ScrollViewer">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Media.HasLyrics}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ScrollViewer.Style>
+                                    <ItemsControl ItemsSource="{Binding Media.Lyrics}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="4,3"
+                                                        CornerRadius="6"
+                                                        HorizontalAlignment="Stretch">
+                                                    <TextBlock Text="{Binding Text}"
+                                                               FontSize="12"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{Binding IsActive, Converter={StaticResource ActiveLyricBrushConv}}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="FontWeight" Value="Normal" />
+                                                                <Setter Property="Opacity" Value="0.6" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                                        <Setter Property="Opacity" Value="1.0" />
+                                                                        <Setter Property="FontSize" Value="13" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+
+                            <!-- ==================== MODULE B: FOCUS TIMER ==================== -->
+                            <Grid x:Name="TimerTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Timer}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: Large Timer Display & Presets -->
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,2">
+                                        <TextBlock Text="{Binding Timer.SessionTitle}"
+                                                   FontSize="11"
+                                                   FontWeight="Medium"
+                                                   Foreground="{StaticResource AccentLightBrush}" />
+                                    </StackPanel>
+
+                                    <!-- Countdown digits -->
+                                    <TextBlock Text="{Binding Timer.FormattedTime}"
+                                               FontSize="36"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               Margin="0,-4,0,2" />
+
+                                    <!-- Progress Line -->
+                                    <ProgressBar Value="{Binding Timer.Progress}"
+                                                 Minimum="0" Maximum="100"
+                                                 Height="4"
+                                                 Foreground="{StaticResource AccentBrush}"
+                                                 Background="#252530"
+                                                 BorderThickness="0"
+                                                 Width="220"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="0,0,0,6" />
+
+                                    <!-- Quick Presets -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="15m"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="8,2" FontSize="11" Margin="0,0,4,0"
+                                                Command="{Binding Timer.SelectPresetCommand}"
+                                                CommandParameter="15" />
+                                        <Button Content="25m"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="8,2" FontSize="11" Margin="0,0,4,0"
+                                                Command="{Binding Timer.SelectPresetCommand}"
+                                                CommandParameter="25" />
+                                        <Button Content="45m"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="8,2" FontSize="11" Margin="0,0,4,0"
+                                                Command="{Binding Timer.SelectPresetCommand}"
+                                                CommandParameter="45" />
+                                        <Button Content="60m"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="8,2" FontSize="11"
+                                                Command="{Binding Timer.SelectPresetCommand}"
+                                                CommandParameter="60" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Right: Big Play/Pause & Reset Action Controls -->
+                                <StackPanel Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal"
+                                            Margin="8,0,0,0">
+                                    <!-- Start / Pause Button -->
+                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                            Width="44" Height="44"
+                                            Margin="0,0,8,0"
+                                            Command="{Binding Timer.ToggleStartPauseCommand}"
+                                            ToolTip="Start / Pause Timer">
+                                        <Border Width="40" Height="40" CornerRadius="20"
+                                                Background="{StaticResource AccentBrush}">
+                                            <Grid>
+                                                <!-- Pause Icon when running -->
+                                                <Path Data="{StaticResource IconPause}"
+                                                      Fill="#FFFFFF"
+                                                      Width="14" Height="14"
+                                                      Stretch="Uniform"
+                                                      Visibility="{Binding Timer.IsRunning, Converter={StaticResource BoolToVisConv}}" />
+                                                <!-- Play Icon when paused -->
+                                                <Path Data="{StaticResource IconPlay}"
+                                                      Fill="#FFFFFF"
+                                                      Width="14" Height="14"
+                                                      Stretch="Uniform"
+                                                      Margin="2,0,0,0">
+                                                    <Path.Style>
+                                                        <Style TargetType="Path">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Timer.IsRunning}" Value="False">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Path.Style>
+                                                </Path>
+                                            </Grid>
+                                        </Border>
+                                    </Button>
+
+                                    <!-- Reset Button -->
+                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                            Width="32" Height="32"
+                                            Command="{Binding Timer.ResetCommand}"
+                                            ToolTip="Reset Timer">
+                                        <Path Data="{StaticResource IconReset}"
+                                              Fill="{StaticResource TextSecondaryBrush}"
+                                              Width="14" Height="14" Stretch="Uniform" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- ==================== MODULE D: WATER REMINDER ==================== -->
+                            <Grid x:Name="WaterTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Water}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.1*" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left Column: Status, Goal & Action Buttons -->
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,2">
+                                        <Path Data="{StaticResource IconWater}"
+                                              Fill="#56C8FF" Width="13" Height="13" Stretch="Uniform" Margin="0,0,6,0" />
+                                        <TextBlock Text="Water Reminder" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                    </StackPanel>
+
+                                    <!-- Big Intake Digits -->
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,2,0,2">
+                                        <TextBlock Text="{Binding Water.IntakeLitersText}"
+                                                   FontSize="28" FontWeight="Bold" Foreground="#FFFFFF" LineHeight="30" />
+                                        <TextBlock Text="{Binding Water.GoalLitersText}"
+                                                   FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
+                                                   Margin="4,0,0,4" VerticalAlignment="Bottom" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding Water.StatusMessage}"
+                                               FontSize="10" Foreground="#56C8FF" Margin="0,0,0,5" />
+
+                                    <!-- Water Bar Progress -->
+                                    <ProgressBar Value="{Binding Water.IntakePercentage, Mode=OneWay}"
+                                                 Minimum="0" Maximum="100"
+                                                 Height="4"
+                                                 Foreground="#38BDF8"
+                                                 Background="#202A36"
+                                                 BorderThickness="0"
+                                                 HorizontalAlignment="Stretch"
+                                                 Margin="0,0,0,7" />
+
+                                    <!-- Buttons Row -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                Padding="8,3" Margin="0,0,4,0"
+                                                Command="{Binding Water.DrinkCommand}"
+                                                ToolTip="Add 250ml drink">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path Data="{StaticResource IconPlus}" Fill="#FFFFFF" Width="8" Height="8" Stretch="Uniform" Margin="0,0,3,0" />
+                                                <TextBlock Text="Drink +250ml" FontSize="9.5" FontWeight="SemiBold" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="6,3" Margin="0,0,4,0"
+                                                Command="{Binding Water.ResetCommand}"
+                                                ToolTip="Reset Today's Intake">
+                                            <Path Data="{StaticResource IconReset}" Fill="{StaticResource TextSecondaryBrush}" Width="9" Height="9" Stretch="Uniform" />
+                                        </Button>
+
+                                        <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="6,3"
+                                                Command="{Binding Water.ToggleReminderCommand}"
+                                                ToolTip="Toggle Periodic Reminder">
+                                            <TextBlock Text="🔔 Remind" FontSize="9.5" Foreground="{StaticResource TextMutedBrush}" />
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Divider Line -->
+                                <Border Grid.Column="1" Background="#262635" Width="1" HorizontalAlignment="Center" Margin="0,6" />
+
+                                <!-- Right Column: Visual Hourly Chart (09, 12, 15, 18, 21) -->
+                                <Grid Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="64" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Chart Title -->
+                                    <TextBlock Grid.Row="0" Text="Intake Timeline (ml)" FontSize="9.5" FontWeight="Medium"
+                                               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,3" />
+
+                                    <!-- Grid Lines & Columns -->
+                                    <Grid Grid.Row="1">
+                                        <!-- Background Dotted Grid Lines -->
+                                        <Border BorderBrush="#203040" BorderThickness="0,1,0,1" Height="44" VerticalAlignment="Center" />
+
+                                        <!-- Hourly Bars Display -->
+                                        <ItemsControl ItemsSource="{Binding Water.HourlyStats}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="5" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid VerticalAlignment="Bottom" HorizontalAlignment="Center">
+                                                        <!-- Background slot -->
+                                                        <Border Width="8" Height="48" CornerRadius="4" Background="#18202A" VerticalAlignment="Bottom" />
+                                                        <!-- Active Filled Bar -->
+                                                        <Border Width="8" Height="{Binding BarHeight}" CornerRadius="4" VerticalAlignment="Bottom">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
+                                                                    <GradientStop Color="#0284C7" Offset="0" />
+                                                                    <GradientStop Color="#38BDF8" Offset="1" />
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
+
+                                    <!-- Hours Labels Row -->
+                                    <UniformGrid Grid.Row="2" Columns="5" Margin="0,3,0,0">
+                                        <TextBlock Text="09" FontSize="8.5" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="12" FontSize="8.5" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="15" FontSize="8.5" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="18" FontSize="8.5" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="21" FontSize="8.5" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" />
+                                    </UniformGrid>
+                                </Grid>
+                            </Grid>
+
+                            <!-- ==================== MODULE E: TODO / TASKS ==================== -->
+                            <Grid x:Name="TodoTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Todo}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="1.4*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left Column: Status, Input & Action Buttons -->
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,2">
+                                        <Path Data="{StaticResource IconTodo}"
+                                              Fill="#34D399" Width="13" Height="13" Stretch="Uniform" Margin="0,0,6,0" />
+                                        <TextBlock Text="TodoList" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                    </StackPanel>
+
+                                    <!-- Big Ratio Display -->
+                                    <TextBlock Text="{Binding Todo.RatioText}"
+                                               FontSize="30" FontWeight="Bold" Foreground="#FFFFFF" LineHeight="32" Margin="0,2,0,0" />
+                                    <TextBlock Text="Tasks Done Today"
+                                               FontSize="10" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,7" />
+
+                                    <!-- Add Task Input Box -->
+                                    <Border Background="#1C1C24" CornerRadius="8" BorderBrush="{StaticResource NotchBorderBrush}" BorderThickness="1" Padding="4,2" Margin="0,0,0,5">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox x:Name="TodoInputBox"
+                                                     Grid.Column="0"
+                                                     Text="{Binding Todo.NewTaskTitle, UpdateSourceTrigger=PropertyChanged}"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                                     FontSize="10.5"
+                                                     VerticalAlignment="Center"
+                                                     KeyDown="TodoInputBox_KeyDown" />
+                                            <Button Grid.Column="1"
+                                                    Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                    Padding="6,2" FontSize="9"
+                                                    Command="{Binding Todo.AddTaskCommand}">
+                                                <Path Data="{StaticResource IconPlus}" Fill="#FFFFFF" Width="8" Height="8" Stretch="Uniform" />
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Clear Completed Button -->
+                                    <Button Content="Clear Finished"
+                                            Style="{StaticResource NotchIconButtonStyle}"
+                                            Padding="6,2" FontSize="9"
+                                            HorizontalAlignment="Left"
+                                            Command="{Binding Todo.ClearCompletedCommand}" />
+                                </StackPanel>
+
+                                <!-- Divider Line -->
+                                <Border Grid.Column="1" Background="#262635" Width="1" HorizontalAlignment="Center" Margin="0,6" />
+
+                                <!-- Right Column: Scrollable Task Checklist -->
+                                <ScrollViewer Grid.Column="2" Margin="10,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding Todo.Items}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="8" Padding="6,4" Margin="0,0,0,4">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#181822" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                    <Setter Property="Background" Value="#12251A" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Checkbox Circle Button -->
+                                                        <Button Grid.Column="0"
+                                                                Width="16" Height="16"
+                                                                Margin="0,0,8,0"
+                                                                Command="{Binding DataContext.Todo.ToggleTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Width="16" Height="16" CornerRadius="8"
+                                                                            BorderBrush="#34D399" BorderThickness="1.5"
+                                                                            Background="{TemplateBinding Background}">
+                                                                        <Path Data="{StaticResource IconCheck}" Fill="#FFFFFF" Width="8" Height="8" Stretch="Uniform"
+                                                                              Visibility="{Binding IsCompleted, Converter={StaticResource BoolToVisConv}}" />
+                                                                    </Border>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                            <Button.Style>
+                                                                <Style TargetType="Button">
+                                                                    <Setter Property="Background" Value="Transparent" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                            <Setter Property="Background" Value="#10B981" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Button.Style>
+                                                        </Button>
+
+                                                        <!-- Task Title Text -->
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding Title}"
+                                                                   FontSize="11"
+                                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                                   VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                            <Setter Property="TextDecorations" Value="Strikethrough" />
+                                                                            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+
+                                                        <!-- Delete Task Button -->
+                                                        <Button Grid.Column="2"
+                                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                                Width="16" Height="16" Padding="2"
+                                                                Command="{Binding DataContext.Todo.RemoveTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"
+                                                                ToolTip="Delete Task">
+                                                            <Path Data="{StaticResource IconClose}" Fill="{StaticResource TextMutedBrush}" Width="7" Height="7" Stretch="Uniform" />
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+
+                            <!-- ==================== MODULE F: FILE SHELF (DROP ZONE) ==================== -->
+                            <Grid x:Name="ShelfTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Shelf}">
+                                <!-- Empty Drop Zone Placeholder -->
+                                <Border BorderBrush="#353545"
+                                        BorderThickness="1.5"
+                                        CornerRadius="10"
+                                        Background="#14141A"
+                                        Padding="10">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Shelf.HasItems}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <Path Data="{StaticResource IconShelf}"
+                                              Fill="{StaticResource AccentLightBrush}"
+                                              Width="24" Height="24" Stretch="Uniform"
+                                              Margin="0,0,0,6" HorizontalAlignment="Center" />
+                                        <TextBlock Text="Drag &amp; Drop files here to park them"
+                                                   FontSize="12" FontWeight="Medium"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   HorizontalAlignment="Center" />
+                                        <TextBlock Text="Drag out later to drop into chats, emails, or folders"
+                                                   FontSize="10" Foreground="{StaticResource TextMutedBrush}"
+                                                   HorizontalAlignment="Center" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Populated File Shelf List -->
+                                <Grid>
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Shelf.HasItems}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Horizontal Scrollable Shelf of Parked Items -->
+                                    <ScrollViewer Grid.Row="0"
+                                                  HorizontalScrollBarVisibility="Auto"
+                                                  VerticalScrollBarVisibility="Disabled">
+                                        <ItemsControl ItemsSource="{Binding Shelf.Items}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Width="110" Height="82"
+                                                            Margin="0,0,8,0"
+                                                            Background="#1F1F27"
+                                                            BorderBrush="{StaticResource NotchBorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="10"
+                                                            Padding="6"
+                                                            Cursor="Hand"
+                                                            ToolTip="Click and drag out to share"
+                                                            PreviewMouseMove="ShelfItem_PreviewMouseMove">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="*" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <!-- Item Icon & Delete Button -->
+                                                            <Grid Grid.Row="0">
+                                                                <Image Source="{Binding Icon}"
+                                                                       Width="26" Height="26"
+                                                                       HorizontalAlignment="Left" />
+                                                                <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                                        Width="18" Height="18"
+                                                                        Padding="2"
+                                                                        HorizontalAlignment="Right"
+                                                                        Command="{Binding DataContext.Shelf.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        ToolTip="Remove from shelf">
+                                                                    <Path Data="{StaticResource IconClose}"
+                                                                          Fill="{StaticResource TextMutedBrush}"
+                                                                          Width="8" Height="8" Stretch="Uniform" />
+                                                                </Button>
+                                                            </Grid>
+
+                                                            <!-- File Name -->
+                                                            <TextBlock Grid.Row="1"
+                                                                       Text="{Binding FileName}"
+                                                                       FontSize="11" FontWeight="Medium"
+                                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,2,0,0" />
+
+                                                            <!-- File Size -->
+                                                            <TextBlock Grid.Row="2"
+                                                                       Text="{Binding FileSizeFormatted}"
+                                                                       FontSize="9"
+                                                                       Foreground="{StaticResource TextMutedBrush}" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+
+                                    <!-- Bottom Shelf Actions -->
+                                    <Grid Grid.Row="1" Margin="0,4,0,0">
+                                        <TextBlock Text="{Binding Shelf.ItemCount, StringFormat='{}{0} item(s) parked • Drag out to copy'}"
+                                                   FontSize="10" Foreground="{StaticResource TextMutedBrush}"
+                                                   VerticalAlignment="Center" />
+                                        <Button Content="Clear All"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="6,2" FontSize="10"
+                                                HorizontalAlignment="Right"
+                                                Command="{Binding Shelf.ClearAllCommand}" />
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+
+                            <!-- ==================== MODULE C: AI ASSISTANT ==================== -->
+                            <Grid x:Name="AiAssistantContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=AI}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Top Toolbar: Provider Switcher & Settings Gear -->
+                                <Grid Grid.Row="0" Margin="0,0,0,4">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <RadioButton x:Name="AiProviderGemini"
+                                                     Content="Gemini 3.8 Flash"
+                                                     Style="{StaticResource NotchTabButtonStyle}"
+                                                     Padding="6,2" FontSize="10"
+                                                     IsChecked="True"
+                                                     Click="AiProvider_Click"
+                                                     Tag="Gemini"
+                                                     Margin="0,0,4,0" />
+                                        <RadioButton x:Name="AiProviderClaude"
+                                                     Content="Claude 3.5 Sonnet"
+                                                     Style="{StaticResource NotchTabButtonStyle}"
+                                                     Padding="6,2" FontSize="10"
+                                                     Click="AiProvider_Click"
+                                                     Tag="Claude"
+                                                     Margin="0,0,4,0" />
+                                        <RadioButton x:Name="AiProviderOpenAi"
+                                                     Content="OpenAI GPT-4o"
+                                                     Style="{StaticResource NotchTabButtonStyle}"
+                                                     Padding="6,2" FontSize="10"
+                                                     Click="AiProvider_Click"
+                                                     Tag="OpenAI" />
+                                    </StackPanel>
+
+                                    <!-- Right: Action buttons (Copy, Shelf, Settings) -->
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                Width="22" Height="22" Padding="3"
+                                                Command="{Binding AI.CopyResponseCommand}"
+                                                ToolTip="Copy Response">
+                                            <Path Data="{StaticResource IconCopy}"
+                                                  Fill="{StaticResource TextSecondaryBrush}"
+                                                  Width="10" Height="10" Stretch="Uniform" />
+                                        </Button>
+                                        <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                Width="22" Height="22" Padding="3"
+                                                Command="{Binding AI.SendToShelfCommand}"
+                                                ToolTip="Save Note to File Shelf">
+                                            <Path Data="{StaticResource IconShelf}"
+                                                  Fill="{StaticResource TextSecondaryBrush}"
+                                                  Width="10" Height="10" Stretch="Uniform" />
+                                        </Button>
+                                        <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                Width="22" Height="22" Padding="3"
+                                                Command="{Binding AI.ToggleSettingsCommand}"
+                                                ToolTip="Configure API Keys">
+                                            <Path Data="{StaticResource IconGear}"
+                                                  Fill="{StaticResource TextSecondaryBrush}"
+                                                  Width="10" Height="10" Stretch="Uniform" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Middle: Streaming Output OR Settings Box -->
+                                <Grid Grid.Row="1">
+                                    <!-- Settings Dialog -->
+                                    <Border Background="#16161D"
+                                            CornerRadius="8"
+                                            Padding="8,5"
+                                            Margin="0,0,0,2"
+                                            Visibility="{Binding AI.IsSettingsVisible, Converter={StaticResource BoolToVisConv}}">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <Grid Margin="0,0,0,4">
+                                                <TextBlock Text="API Key Settings" FontSize="10.5" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                    <Button Content="Get API Key"
+                                                            Style="{StaticResource NotchIconButtonStyle}"
+                                                            Padding="6,1" FontSize="9.5" Margin="0,0,6,0"
+                                                            Foreground="{StaticResource AccentLightBrush}"
+                                                            Command="{Binding AI.OpenApiKeyGuideCommand}" />
+                                                    <Button Content="Save Keys"
+                                                            Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                            Padding="8,1" FontSize="9.5"
+                                                            Command="{Binding AI.SaveKeysCommand}" />
+                                                </StackPanel>
+                                            </Grid>
+                                            <Grid Margin="0,0,0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="65" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Gemini Key:" FontSize="9.5" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1" Text="{Binding AI.GeminiKey, UpdateSourceTrigger=PropertyChanged}"
+                                                         FontSize="9.5" Background="#22222C" Foreground="#FFFFFF" BorderBrush="#383848" Padding="4,1" />
+                                            </Grid>
+                                            <Grid Margin="0,0,0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="65" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Claude Key:" FontSize="9.5" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1" Text="{Binding AI.ClaudeKey, UpdateSourceTrigger=PropertyChanged}"
+                                                         FontSize="9.5" Background="#22222C" Foreground="#FFFFFF" BorderBrush="#383848" Padding="4,1" />
+                                            </Grid>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="65" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="OpenAI Key:" FontSize="9.5" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1" Text="{Binding AI.OpenAiKey, UpdateSourceTrigger=PropertyChanged}"
+                                                         FontSize="9.5" Background="#22222C" Foreground="#FFFFFF" BorderBrush="#383848" Padding="4,1" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Streaming Response Viewer -->
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled">
+                                        <ScrollViewer.Style>
+                                            <Style TargetType="ScrollViewer">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AI.IsSettingsVisible}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ScrollViewer.Style>
+                                        <StackPanel>
+                                            <!-- Live Thinking / Streaming Indicator Banner -->
+                                            <Border Background="#1B172C"
+                                                    BorderBrush="#4C1D95"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="8,4"
+                                                    Margin="0,0,0,5"
+                                                    Visibility="{Binding AI.IsStreaming, Converter={StaticResource BoolToVisConv}}">
+                                                <StackPanel>
+                                                    <Grid>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <!-- Animated Pulsing Dots -->
+                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#A78BFA" Margin="0,0,4,0" VerticalAlignment="Center">
+                                                                <Border.Triggers>
+                                                                    <EventTrigger RoutedEvent="Loaded">
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.25" To="1.0" Duration="0:0:0.45" />
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </EventTrigger>
+                                                                </Border.Triggers>
+                                                            </Border>
+                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#C4B5FD" Margin="0,0,4,0" VerticalAlignment="Center">
+                                                                <Border.Triggers>
+                                                                    <EventTrigger RoutedEvent="Loaded">
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True" BeginTime="0:0:0.15">
+                                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.25" To="1.0" Duration="0:0:0.45" />
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </EventTrigger>
+                                                                </Border.Triggers>
+                                                            </Border>
+                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#DDD6FE" Margin="0,0,7,0" VerticalAlignment="Center">
+                                                                <Border.Triggers>
+                                                                    <EventTrigger RoutedEvent="Loaded">
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True" BeginTime="0:0:0.3">
+                                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.25" To="1.0" Duration="0:0:0.45" />
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </EventTrigger>
+                                                                </Border.Triggers>
+                                                            </Border>
+
+                                                            <TextBlock Text="{Binding AI.StatusText}"
+                                                                       FontSize="10"
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="#DDD6FE"
+                                                                       VerticalAlignment="Center" />
+                                                        </StackPanel>
+
+                                                        <Button Content="Stop"
+                                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                                HorizontalAlignment="Right"
+                                                                Padding="6,1"
+                                                                FontSize="9"
+                                                                Foreground="#F87171"
+                                                                Command="{Binding AI.CancelStreamCommand}"
+                                                                ToolTip="Stop generating" />
+                                                    </Grid>
+
+                                                    <ProgressBar IsIndeterminate="True"
+                                                                 Height="2"
+                                                                 Margin="0,4,0,0"
+                                                                 Foreground="#A78BFA"
+                                                                 Background="#2A2440"
+                                                                 BorderThickness="0" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Live Thought Process Card (when model streams thoughts) -->
+                                            <Border Background="#151520"
+                                                    BorderBrush="#2E2A45"
+                                                    BorderThickness="2,0,0,0"
+                                                    Padding="7,3"
+                                                    Margin="0,0,0,5"
+                                                    Visibility="{Binding AI.HasThinkingText, Converter={StaticResource BoolToVisConv}}">
+                                                <StackPanel>
+                                                    <TextBlock Text="💭 Thought Process"
+                                                               FontSize="9"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#A78BFA"
+                                                               Margin="0,0,0,1" />
+                                                    <TextBlock Text="{Binding AI.ThinkingText}"
+                                                               FontSize="9.5"
+                                                               FontStyle="Italic"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               TextWrapping="Wrap"
+                                                               MaxHeight="42"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Main Response Text -->
+                                            <TextBlock Text="{Binding AI.ResponseText}"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+
+                                <!-- Bottom: Prompt Input Bar -->
+                                <Border Grid.Row="2"
+                                        Background="#1C1C24"
+                                        CornerRadius="10"
+                                        BorderBrush="{StaticResource NotchBorderBrush}"
+                                        BorderThickness="1"
+                                        Padding="6,2"
+                                        Margin="0,4,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBox x:Name="AiInputBox"
+                                                 Grid.Column="0"
+                                                 Text="{Binding AI.Prompt, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                                 FontSize="11"
+                                                 VerticalAlignment="Center"
+                                                 KeyDown="AiInputBox_KeyDown" />
+
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="Open in App"
+                                                    Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                    Padding="6,2" FontSize="9"
+                                                    Margin="0,0,4,0"
+                                                    Command="{Binding AI.OpenInstalledAppCommand}"
+                                                    ToolTip="Copy prompt &amp; open in installed Claude, Gemini, or ChatGPT app (or browser)" />
+
+                                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="24" Height="24" Padding="4"
+                                                    Command="{Binding AI.CancelStreamCommand}"
+                                                    Visibility="{Binding AI.IsStreaming, Converter={StaticResource BoolToVisConv}}"
+                                                    ToolTip="Stop generation">
+                                                <Path Data="{StaticResource IconClose}"
+                                                      Fill="#F87171"
+                                                      Width="9" Height="9" Stretch="Uniform" />
+                                            </Button>
+
+                                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="24" Height="24" Padding="4"
+                                                    Command="{Binding AI.SendPromptCommand}"
+                                                    Visibility="{Binding AI.IsStreaming, Converter={StaticResource InverseBoolToVisConv}}"
+                                                    ToolTip="Stream response inside Notch (Enter)">
+                                                <Path Data="{StaticResource IconSend}"
+                                                      Fill="{StaticResource AccentLightBrush}"
+                                                      Width="10" Height="10" Stretch="Uniform" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+
+                            <!-- ==================== MODULE H: NOTIFICATIONS / ALERTS ==================== -->
+                            <Grid x:Name="NotificationsTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Notifications}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Header Bar: Status & Actions -->
+                                <Grid Grid.Row="0" Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left: Status Indicator -->
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Width="7" Height="7" CornerRadius="3.5" Background="#33E07A" Margin="0,0,6,0">
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#33E07A" BlurRadius="6" ShadowDepth="0" Opacity="0.8" />
+                                            </Border.Effect>
+                                        </Border>
+                                        <TextBlock Text="Windows Toast Listener" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,0,8,0" />
+                                        <Border Background="#1C2D22" BorderBrush="#2A5C3C" BorderThickness="1" CornerRadius="8" Padding="6,1">
+                                            <TextBlock Text="Active" FontSize="9" FontWeight="Medium" Foreground="#4ADE80" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Right: Action Buttons -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="Simulate Toast"
+                                                Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                Padding="8,2" FontSize="10" Margin="0,0,6,0"
+                                                Command="{Binding TriggerTestNotificationCommand}"
+                                                ToolTip="Send a simulated notification to see the Notch reaction" />
+                                        <Button Content="Clear All"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="8,2" FontSize="10"
+                                                Command="{Binding ClearNotificationsCommand}"
+                                                ToolTip="Clear notification history" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Notification List or Empty State -->
+                                <Grid Grid.Row="1">
+                                    <!-- Empty State -->
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                Visibility="{Binding NotificationCount, Converter={StaticResource GreaterThanZeroToVisConv}, ConverterParameter=Invert}">
+                                        <Path Data="{StaticResource IconBell}" Fill="#4B5563" Width="26" Height="26" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                        <TextBlock Text="No Notifications" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="All incoming Windows toasts, Slack, WhatsApp, and system alerts are captured here." FontSize="10" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                                    </StackPanel>
+
+                                    <!-- Captured Notifications Scroll List -->
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                                  Visibility="{Binding NotificationCount, Converter={StaticResource GreaterThanZeroToVisConv}}">
+                                        <ItemsControl ItemsSource="{Binding NotificationListener.RecentNotifications}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#16161F" BorderBrush="#252535" BorderThickness="1"
+                                                            CornerRadius="10" Padding="10,7" Margin="0,0,4,6">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="*" />
+                                                            </Grid.RowDefinitions>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <!-- Row 0: App Name Tag & Time -->
+                                                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Border Background="#2E1C4E" BorderBrush="#5B21B6" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                                                    <TextBlock Text="{Binding AppName}" FontSize="9" FontWeight="Bold" Foreground="#DDD6FE" />
+                                                                </Border>
+                                                                <TextBlock Text="{Binding TimeText}" FontSize="9" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
+                                                            </StackPanel>
+
+                                                            <!-- Top Right Actions: Copy & Delete -->
+                                                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+                                                                <Button Style="{StaticResource NotchIconButtonStyle}" Width="20" Height="20" Padding="3" Margin="0,0,3,0"
+                                                                        ToolTip="Copy text"
+                                                                        Command="{Binding DataContext.CopyNotificationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <Path Data="{StaticResource IconCopy}" Fill="{StaticResource TextSecondaryBrush}" Width="9" Height="9" Stretch="Uniform" />
+                                                                </Button>
+                                                                <Button Style="{StaticResource NotchIconButtonStyle}" Width="20" Height="20" Padding="3"
+                                                                        ToolTip="Remove"
+                                                                        Command="{Binding DataContext.RemoveNotificationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <Path Data="{StaticResource IconClose}" Fill="{StaticResource TextMutedBrush}" Width="8" Height="8" Stretch="Uniform" />
+                                                                </Button>
+                                                            </StackPanel>
+
+                                                            <!-- Row 1: Title -->
+                                                            <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Title}"
+                                                                       FontSize="11.5" FontWeight="SemiBold" Foreground="#FFFFFF"
+                                                                       Margin="0,3,0,1" TextTrimming="CharacterEllipsis" />
+
+                                                            <!-- Row 2: Message -->
+                                                            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding Message}"
+                                                                       FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"
+                                                                       TextWrapping="Wrap" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
