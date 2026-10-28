@@ -13,6 +13,7 @@ public enum NotchTab
     Lyrics,
     Timer,
     Water,
+    Weather,
     Todo,
     Shelf,
     AI,

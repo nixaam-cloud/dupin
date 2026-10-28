@@ -184,75 +184,240 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Left: Tiny battery status pill (hidden in minimal mode) -->
+                            <!-- Left: Live Weather Pill (hidden in minimal mode) -->
                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
-                                        Visibility="{Binding IsMinimal, Converter={StaticResource InverseBoolToVisConv}}">
-                                <Border Width="8" Height="8" CornerRadius="4"
-                                        BorderBrush="#33E07A" BorderThickness="1.5" Background="#103320"
-                                        Margin="0,0,3,0" ToolTip="Battery Status" />
-                                <TextBlock Text="{Binding BatteryPercent, StringFormat='{}{0}%'}"
-                                           FontSize="9" FontWeight="Medium" Foreground="{StaticResource TextMutedBrush}"
+                                        Visibility="{Binding IsMinimal, Converter={StaticResource InverseBoolToVisConv}}"
+                                        ToolTip="{Binding Weather.CityName}">
+                                <TextBlock Text="{Binding Weather.ShortBadgeText}"
+                                           FontSize="9.5" FontWeight="SemiBold" Foreground="#ECEFF7"
                                            VerticalAlignment="Center" />
                             </StackPanel>
 
-                            <!-- Center: Cute Mascot Eyes with smooth blink and soft doze animation! -->
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <!-- Left Eye -->
-                                <Border x:Name="LeftEyeBorder" Width="5" Height="9" CornerRadius="2.5" Background="#FFFFFF" Margin="0,0,7,0">
-                                    <Border.Effect>
-                                        <DropShadowEffect x:Name="LeftEyeGlow" Color="#78BEFF" BlurRadius="6" ShadowDepth="0" Opacity="0.85" />
-                                    </Border.Effect>
-                                    <Border.RenderTransform>
-                                        <ScaleTransform x:Name="LeftEyeScale" CenterX="2.5" CenterY="4.5" />
-                                    </Border.RenderTransform>
-                                    <Border.Triggers>
-                                        <EventTrigger RoutedEvent="Loaded">
-                                            <BeginStoryboard>
-                                                <Storyboard RepeatBehavior="Forever">
-                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="LeftEyeScale" Storyboard.TargetProperty="ScaleY">
-                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
-                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:3.8" Value="1.0" />
-                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:3.95" Value="0.1" />
-                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:4.1" Value="1.0" />
-                                                        <SplineDoubleKeyFrame KeyTime="0:0:7.0" Value="1.0" />
-                                                        <SplineDoubleKeyFrame KeyTime="0:0:7.5" Value="0.25" KeySpline="0.4,0,0.2,1" />
-                                                        <SplineDoubleKeyFrame KeyTime="0:0:9.0" Value="0.25" KeySpline="0.4,0,0.2,1" />
-                                                        <SplineDoubleKeyFrame KeyTime="0:0:9.4" Value="1.0" KeySpline="0.4,0,0.2,1" />
-                                                    </DoubleAnimationUsingKeyFrames>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </Border.Triggers>
-                                </Border>
+                            <!-- Center: Cute Mascot Eyes with Sun / Cloud / Rain Weather Effects! -->
+                            <Grid Grid.Column="1" Width="56" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" ClipToBounds="False">
+                                <!-- ☀️ SUN WEATHER EFFECT OVERLAY -->
+                                <Grid Visibility="{Binding Weather.IsSunEffect, Converter={StaticResource BoolToVisConv}}" IsHitTestVisible="False">
+                                    <!-- Warm golden sunbeam aura behind eyes -->
+                                    <Ellipse Width="34" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.28">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#FBBF24" Offset="0" />
+                                                <GradientStop Color="#00FBBF24" Offset="1" />
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
 
-                                <!-- Right Eye -->
-                                <Border x:Name="RightEyeBorder" Width="5" Height="9" CornerRadius="2.5" Background="#FFFFFF">
-                                    <Border.Effect>
-                                        <DropShadowEffect x:Name="RightEyeGlow" Color="#78BEFF" BlurRadius="6" ShadowDepth="0" Opacity="0.85" />
-                                    </Border.Effect>
-                                    <Border.RenderTransform>
-                                        <ScaleTransform x:Name="RightEyeScale" CenterX="2.5" CenterY="4.5" />
-                                    </Border.RenderTransform>
-                                    <Border.Triggers>
-                                        <EventTrigger RoutedEvent="Loaded">
-                                            <BeginStoryboard>
-                                                <Storyboard RepeatBehavior="Forever">
-                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RightEyeScale" Storyboard.TargetProperty="ScaleY">
-                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
-                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:3.8" Value="1.0" />
-                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:3.95" Value="0.1" />
-                                                        <DiscreteDoubleKeyFrame KeyTime="0:0:4.1" Value="1.0" />
-                                                        <SplineDoubleKeyFrame KeyTime="0:0:7.0" Value="1.0" />
-                                                        <SplineDoubleKeyFrame KeyTime="0:0:7.5" Value="0.25" KeySpline="0.4,0,0.2,1" />
-                                                        <SplineDoubleKeyFrame KeyTime="0:0:9.0" Value="0.25" KeySpline="0.4,0,0.2,1" />
-                                                        <SplineDoubleKeyFrame KeyTime="0:0:9.4" Value="1.0" KeySpline="0.4,0,0.2,1" />
-                                                    </DoubleAnimationUsingKeyFrames>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </Border.Triggers>
-                                </Border>
-                            </StackPanel>
+                                    <!-- Rotating Golden Sun with Rays -->
+                                    <Path Data="{StaticResource IconSun}"
+                                          Fill="#FBBF24"
+                                          Width="11" Height="11"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Margin="0,1,4,0"
+                                          RenderTransformOrigin="0.5,0.5">
+                                        <Path.Effect>
+                                            <DropShadowEffect Color="#F59E0B" BlurRadius="6" ShadowDepth="0" Opacity="0.95" />
+                                        </Path.Effect>
+                                        <Path.RenderTransform>
+                                            <RotateTransform x:Name="CollapsedSunRotate" Angle="0" />
+                                        </Path.RenderTransform>
+                                        <Path.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever">
+                                                        <DoubleAnimation Storyboard.TargetName="CollapsedSunRotate"
+                                                                         Storyboard.TargetProperty="Angle"
+                                                                         From="0" To="360" Duration="0:0:7" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Path.Triggers>
+                                    </Path>
+                                </Grid>
+
+                                <!-- ☁️ CLOUD WEATHER EFFECT OVERLAY -->
+                                <Grid Visibility="{Binding Weather.IsCloudEffect, Converter={StaticResource BoolToVisConv}}" IsHitTestVisible="False">
+                                    <!-- Back drifting cloud -->
+                                    <Path Data="{StaticResource IconCloud}"
+                                          Fill="#94A3B8"
+                                          Opacity="0.55"
+                                          Width="13" Height="9"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Top"
+                                          Margin="4,1,0,0">
+                                        <Path.RenderTransform>
+                                            <TranslateTransform x:Name="CollapsedCloud1Tx" X="0" />
+                                        </Path.RenderTransform>
+                                        <Path.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                        <DoubleAnimation Storyboard.TargetName="CollapsedCloud1Tx"
+                                                                         Storyboard.TargetProperty="X"
+                                                                         From="-3" To="6" Duration="0:0:2.6" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Path.Triggers>
+                                    </Path>
+
+                                    <!-- Front fluffy drifting cloud -->
+                                    <Path Data="{StaticResource IconCloud}"
+                                          Fill="#E2E8F0"
+                                          Opacity="0.88"
+                                          Width="12" Height="8"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Margin="0,2,4,0">
+                                        <Path.Effect>
+                                            <DropShadowEffect Color="#93C5FD" BlurRadius="5" ShadowDepth="0" Opacity="0.7" />
+                                        </Path.Effect>
+                                        <Path.RenderTransform>
+                                            <TranslateTransform x:Name="CollapsedCloud2Tx" X="0" />
+                                        </Path.RenderTransform>
+                                        <Path.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                        <DoubleAnimation Storyboard.TargetName="CollapsedCloud2Tx"
+                                                                         Storyboard.TargetProperty="X"
+                                                                         From="4" To="-5" Duration="0:0:2.1" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Path.Triggers>
+                                    </Path>
+                                </Grid>
+
+                                <!-- 🌧️ RAIN WEATHER EFFECT OVERLAY -->
+                                <Grid Visibility="{Binding Weather.IsRainEffect, Converter={StaticResource BoolToVisConv}}" IsHitTestVisible="False">
+                                    <!-- Top Storm Cloud -->
+                                    <Path Data="{StaticResource IconCloud}"
+                                          Fill="#64748B"
+                                          Opacity="0.85"
+                                          Width="14" Height="8"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Margin="0,0,4,0" />
+
+                                    <!-- Falling Raindrop 1 (Left) -->
+                                    <Border Width="1.6" Height="5" CornerRadius="1" Background="#38BDF8"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="9,4,0,0">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform x:Name="RainDrop1Y" Y="0" />
+                                        </Border.RenderTransform>
+                                        <Border.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever">
+                                                        <DoubleAnimation Storyboard.TargetName="RainDrop1Y" Storyboard.TargetProperty="Y" From="-2" To="14" Duration="0:0:0.65" />
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.95" To="0.0" Duration="0:0:0.65" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+
+                                    <!-- Falling Raindrop 2 (Center) -->
+                                    <Border Width="1.6" Height="5" CornerRadius="1" Background="#7DD3FC"
+                                            HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,3,0,0">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform x:Name="RainDrop2Y" Y="0" />
+                                        </Border.RenderTransform>
+                                        <Border.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.22">
+                                                        <DoubleAnimation Storyboard.TargetName="RainDrop2Y" Storyboard.TargetProperty="Y" From="-2" To="14" Duration="0:0:0.65" />
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.95" To="0.0" Duration="0:0:0.65" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+
+                                    <!-- Falling Raindrop 3 (Right) -->
+                                    <Border Width="1.6" Height="5" CornerRadius="1" Background="#38BDF8"
+                                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,9,0">
+                                        <Border.RenderTransform>
+                                            <TranslateTransform x:Name="RainDrop3Y" Y="0" />
+                                        </Border.RenderTransform>
+                                        <Border.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.42">
+                                                        <DoubleAnimation Storyboard.TargetName="RainDrop3Y" Storyboard.TargetProperty="Y" From="-2" To="14" Duration="0:0:0.65" />
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.95" To="0.0" Duration="0:0:0.65" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Mascot Eyes Pair -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <!-- Left Eye -->
+                                    <Border x:Name="LeftEyeBorder" Width="5" Height="9" CornerRadius="2.5" Background="#FFFFFF" Margin="0,0,7,0">
+                                        <Border.Effect>
+                                            <DropShadowEffect x:Name="LeftEyeGlow" Color="#78BEFF" BlurRadius="6" ShadowDepth="0" Opacity="0.85" />
+                                        </Border.Effect>
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="LeftEyeScale" CenterX="2.5" CenterY="4.5" />
+                                        </Border.RenderTransform>
+                                        <Border.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever">
+                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="LeftEyeScale" Storyboard.TargetProperty="ScaleY">
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:3.8" Value="1.0" />
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:3.95" Value="0.1" />
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:4.1" Value="1.0" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:7.0" Value="1.0" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:7.5" Value="0.25" KeySpline="0.4,0,0.2,1" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:9.0" Value="0.25" KeySpline="0.4,0,0.2,1" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:9.4" Value="1.0" KeySpline="0.4,0,0.2,1" />
+                                                        </DoubleAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+
+                                    <!-- Right Eye -->
+                                    <Border x:Name="RightEyeBorder" Width="5" Height="9" CornerRadius="2.5" Background="#FFFFFF">
+                                        <Border.Effect>
+                                            <DropShadowEffect x:Name="RightEyeGlow" Color="#78BEFF" BlurRadius="6" ShadowDepth="0" Opacity="0.85" />
+                                        </Border.Effect>
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="RightEyeScale" CenterX="2.5" CenterY="4.5" />
+                                        </Border.RenderTransform>
+                                        <Border.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever">
+                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RightEyeScale" Storyboard.TargetProperty="ScaleY">
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:3.8" Value="1.0" />
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:3.95" Value="0.1" />
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:4.1" Value="1.0" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:7.0" Value="1.0" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:7.5" Value="0.25" KeySpline="0.4,0,0.2,1" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:9.0" Value="0.25" KeySpline="0.4,0,0.2,1" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:9.4" Value="1.0" KeySpline="0.4,0,0.2,1" />
+                                                        </DoubleAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Border.Triggers>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
 
                             <!-- Right: Time / Clock (hidden in minimal mode) -->
                             <TextBlock Grid.Column="2"
@@ -397,6 +562,20 @@
                                           Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
                                           Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
                                     <TextBlock Text="Water" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- Weather Tab -->
+                            <RadioButton Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Weather"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconSun}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Weather" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
                                 </StackPanel>
                             </RadioButton>
 
@@ -1011,6 +1190,253 @@
                                         <TextBlock Text="21" FontSize="8.5" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" />
                                     </UniformGrid>
                                 </Grid>
+                            </Grid>
+
+                            <!-- ==================== MODULE D2: WEATHER & EYE EFFECTS ==================== -->
+                            <Grid x:Name="WeatherTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Weather}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.1*" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left Column: Live Weather Info & City Search -->
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,2">
+                                        <Path Data="{StaticResource IconSun}"
+                                              Fill="#FBBF24" Width="13" Height="13" Stretch="Uniform" Margin="0,0,6,0" />
+                                        <TextBlock Text="{Binding Weather.CityName}" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                        <Border Background="#232332" CornerRadius="6" Padding="6,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Weather.ConditionText}" FontSize="9" Foreground="#FDE68A" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,1,0,1">
+                                        <TextBlock Text="{Binding Weather.TemperatureText}"
+                                                   FontSize="28" FontWeight="Bold" Foreground="#FFFFFF" LineHeight="30" />
+                                        <TextBlock Text="{Binding Weather.WeatherEmoji}"
+                                                   FontSize="18" Margin="6,0,0,3" VerticalAlignment="Bottom" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding Weather.DetailsText}"
+                                               FontSize="9.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+
+                                    <!-- City Search Input Box -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Background="#1C1C24" CornerRadius="8" BorderBrush="{StaticResource NotchBorderBrush}" BorderThickness="1" Padding="6,2" Margin="0,0,4,0">
+                                            <TextBox x:Name="WeatherCityInputBox"
+                                                     Text="{Binding Weather.CitySearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                                     FontSize="10"
+                                                     VerticalAlignment="Center"
+                                                     ToolTip="Type a city name (e.g. Tokyo, London, Malé) and press Enter"
+                                                     KeyDown="WeatherCityInputBox_KeyDown" />
+                                        </Border>
+                                        <Button Grid.Column="1"
+                                                Content="Search City"
+                                                Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                Padding="8,3" FontSize="9.5" Margin="0,0,4,0"
+                                                Command="{Binding Weather.SearchCityCommand}" />
+                                        <Button Grid.Column="2"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="6,3"
+                                                Command="{Binding Weather.RefreshWeatherCommand}"
+                                                ToolTip="Refresh Live Weather">
+                                            <Path Data="{StaticResource IconReset}" Fill="{StaticResource TextSecondaryBrush}" Width="9" Height="9" Stretch="Uniform" />
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- Divider Line -->
+                                <Border Grid.Column="1" Background="#262635" Width="1" HorizontalAlignment="Center" Margin="0,6" />
+
+                                <!-- Right Column: Live Mascot Eye Weather Animation Stage & Mode Controls -->
+                                <StackPanel Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Weather.EffectStatusText}"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               Margin="0,0,0,5" />
+
+                                    <!-- Live Interactive Eye Animation Stage -->
+                                    <Border Height="48"
+                                            Background="#0F0F16"
+                                            BorderBrush="#2E2E42"
+                                            BorderThickness="1.5"
+                                            CornerRadius="12"
+                                            Margin="0,0,0,7">
+                                        <Grid Width="90" Height="36" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <!-- ☀️ Sun Preview Overlay -->
+                                            <Grid Visibility="{Binding Weather.IsSunEffect, Converter={StaticResource BoolToVisConv}}">
+                                                <Ellipse Width="52" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.35">
+                                                    <Ellipse.Fill>
+                                                        <RadialGradientBrush>
+                                                            <GradientStop Color="#FBBF24" Offset="0" />
+                                                            <GradientStop Color="#00FBBF24" Offset="1" />
+                                                        </RadialGradientBrush>
+                                                    </Ellipse.Fill>
+                                                </Ellipse>
+                                                <Path Data="{StaticResource IconSun}"
+                                                      Fill="#FBBF24" Width="15" Height="15" Stretch="Uniform"
+                                                      HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,8,0"
+                                                      RenderTransformOrigin="0.5,0.5">
+                                                    <Path.Effect>
+                                                        <DropShadowEffect Color="#F59E0B" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
+                                                    </Path.Effect>
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform x:Name="PreviewSunRotate" Angle="0" />
+                                                    </Path.RenderTransform>
+                                                    <Path.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever">
+                                                                    <DoubleAnimation Storyboard.TargetName="PreviewSunRotate" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:6" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Path.Triggers>
+                                                </Path>
+                                            </Grid>
+
+                                            <!-- ☁️ Cloud Preview Overlay -->
+                                            <Grid Visibility="{Binding Weather.IsCloudEffect, Converter={StaticResource BoolToVisConv}}">
+                                                <Path Data="{StaticResource IconCloud}" Fill="#94A3B8" Opacity="0.6" Width="18" Height="12" Stretch="Uniform"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,2,0,0">
+                                                    <Path.RenderTransform>
+                                                        <TranslateTransform x:Name="PreviewCloud1Tx" X="0" />
+                                                    </Path.RenderTransform>
+                                                    <Path.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                    <DoubleAnimation Storyboard.TargetName="PreviewCloud1Tx" Storyboard.TargetProperty="X" From="-5" To="8" Duration="0:0:2.4" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Path.Triggers>
+                                                </Path>
+                                                <Path Data="{StaticResource IconCloud}" Fill="#E2E8F0" Opacity="0.9" Width="16" Height="11" Stretch="Uniform"
+                                                      HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,3,10,0">
+                                                    <Path.Effect>
+                                                        <DropShadowEffect Color="#93C5FD" BlurRadius="6" ShadowDepth="0" Opacity="0.8" />
+                                                    </Path.Effect>
+                                                    <Path.RenderTransform>
+                                                        <TranslateTransform x:Name="PreviewCloud2Tx" X="0" />
+                                                    </Path.RenderTransform>
+                                                    <Path.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                    <DoubleAnimation Storyboard.TargetName="PreviewCloud2Tx" Storyboard.TargetProperty="X" From="6" To="-7" Duration="0:0:2.0" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Path.Triggers>
+                                                </Path>
+                                            </Grid>
+
+                                            <!-- 🌧️ Rain Preview Overlay -->
+                                            <Grid Visibility="{Binding Weather.IsRainEffect, Converter={StaticResource BoolToVisConv}}">
+                                                <Path Data="{StaticResource IconCloud}" Fill="#64748B" Opacity="0.9" Width="20" Height="11" Stretch="Uniform"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Top" Margin="14,0,0,0" />
+                                                <Border Width="2" Height="6" CornerRadius="1" Background="#38BDF8" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,6,0,0">
+                                                    <Border.RenderTransform>
+                                                        <TranslateTransform x:Name="PreviewRain1Y" Y="0" />
+                                                    </Border.RenderTransform>
+                                                    <Border.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever">
+                                                                    <DoubleAnimation Storyboard.TargetName="PreviewRain1Y" Storyboard.TargetProperty="Y" From="-2" To="20" Duration="0:0:0.65" />
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.0" Duration="0:0:0.65" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Border.Triggers>
+                                                </Border>
+                                                <Border Width="2" Height="6" CornerRadius="1" Background="#7DD3FC" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0">
+                                                    <Border.RenderTransform>
+                                                        <TranslateTransform x:Name="PreviewRain2Y" Y="0" />
+                                                    </Border.RenderTransform>
+                                                    <Border.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.22">
+                                                                    <DoubleAnimation Storyboard.TargetName="PreviewRain2Y" Storyboard.TargetProperty="Y" From="-2" To="20" Duration="0:0:0.65" />
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.0" Duration="0:0:0.65" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Border.Triggers>
+                                                </Border>
+                                                <Border Width="2" Height="6" CornerRadius="1" Background="#38BDF8" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,20,0">
+                                                    <Border.RenderTransform>
+                                                        <TranslateTransform x:Name="PreviewRain3Y" Y="0" />
+                                                    </Border.RenderTransform>
+                                                    <Border.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever" BeginTime="0:0:0.42">
+                                                                    <DoubleAnimation Storyboard.TargetName="PreviewRain3Y" Storyboard.TargetProperty="Y" From="-2" To="20" Duration="0:0:0.65" />
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1.0" To="0.0" Duration="0:0:0.65" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Border.Triggers>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Preview Mascot Eyes -->
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Border Width="6" Height="12" CornerRadius="3" Background="#FFFFFF" Margin="0,0,9,0">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect x:Name="PreviewLeftEyeGlow" Color="#78BEFF" BlurRadius="8" ShadowDepth="0" Opacity="0.9" />
+                                                    </Border.Effect>
+                                                </Border>
+                                                <Border Width="6" Height="12" CornerRadius="3" Background="#FFFFFF">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect x:Name="PreviewRightEyeGlow" Color="#78BEFF" BlurRadius="8" ShadowDepth="0" Opacity="0.9" />
+                                                    </Border.Effect>
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Mode Selector Buttons -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Auto"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="7,2" FontSize="9.5" Margin="0,0,4,0"
+                                                Command="{Binding Weather.SetEffectModeCommand}"
+                                                CommandParameter="Auto"
+                                                ToolTip="Sync eye animation automatically with live weather" />
+                                        <Button Content="☀️ Sun"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="7,2" FontSize="9.5" Margin="0,0,4,0"
+                                                Command="{Binding Weather.SetEffectModeCommand}"
+                                                CommandParameter="Sun"
+                                                ToolTip="Preview Sunny eye animation" />
+                                        <Button Content="☁️ Cloud"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="7,2" FontSize="9.5" Margin="0,0,4,0"
+                                                Command="{Binding Weather.SetEffectModeCommand}"
+                                                CommandParameter="Cloud"
+                                                ToolTip="Preview Cloudy eye animation" />
+                                        <Button Content="🌧️ Rain"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="7,2" FontSize="9.5"
+                                                Command="{Binding Weather.SetEffectModeCommand}"
+                                                CommandParameter="Rain"
+                                                ToolTip="Preview Rainy eye animation" />
+                                    </StackPanel>
+                                </StackPanel>
                             </Grid>
 
                             <!-- ==================== MODULE E: TODO / TASKS ==================== -->

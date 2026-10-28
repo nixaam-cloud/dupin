@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     private const double COLLAPSED_HEIGHT = 32;
     private const double NOTIFICATION_WIDTH = 320;
     private const double NOTIFICATION_HEIGHT = 38;
-    private const double EXPANDED_WIDTH = 555;
+    private const double EXPANDED_WIDTH = 600;
     private const double EXPANDED_HEIGHT = 224;
 
     private readonly DispatcherTimer _collapseTimer;
@@ -114,9 +114,41 @@ public partial class MainWindow : Window
                     }
                 });
             };
+
+            vm.Weather.WeatherEffectChanged += () =>
+            {
+                Dispatcher.Invoke(() => ApplyWeatherEyeGlow(vm.Weather.ActiveVisualEffect));
+            };
+            ApplyWeatherEyeGlow(vm.Weather.ActiveVisualEffect);
         }
 
         ResetInactivityTimer();
+    }
+
+    private void ApplyWeatherEyeGlow(string effect)
+    {
+        try
+        {
+            string hex = effect switch
+            {
+                "Sun" => "#FBBF24",
+                "Rain" => "#38BDF8",
+                "Cloud" => "#93C5FD",
+                _ => "#78BEFF"
+            };
+            var targetColor = (Color)ColorConverter.ConvertFromString(hex);
+            var anim = new ColorAnimation
+            {
+                To = targetColor,
+                Duration = TimeSpan.FromMilliseconds(450)
+            };
+
+            LeftEyeGlow?.BeginAnimation(DropShadowEffect.ColorProperty, anim);
+            RightEyeGlow?.BeginAnimation(DropShadowEffect.ColorProperty, anim);
+            PreviewLeftEyeGlow?.BeginAnimation(DropShadowEffect.ColorProperty, anim);
+            PreviewRightEyeGlow?.BeginAnimation(DropShadowEffect.ColorProperty, anim);
+        }
+        catch { }
     }
 
     private void ScrollToActiveLyric(int index)
@@ -662,6 +694,18 @@ public partial class MainWindow : Window
             if (vm.Todo.AddTaskCommand.CanExecute(null))
             {
                 vm.Todo.AddTaskCommand.Execute(null);
+            }
+            e.Handled = true;
+        }
+    }
+
+    private void WeatherCityInputBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && DataContext is MainViewModel vm)
+        {
+            if (vm.Weather.SearchCityCommand.CanExecute(null))
+            {
+                vm.Weather.SearchCityCommand.Execute(null);
             }
             e.Handled = true;
         }

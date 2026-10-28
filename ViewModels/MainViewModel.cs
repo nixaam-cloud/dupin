@@ -91,6 +91,7 @@ public partial class MainViewModel : ObservableObject
     public MediaViewModel Media { get; }
     public TimerViewModel Timer { get; }
     public WaterViewModel Water { get; }
+    public WeatherViewModel Weather { get; }
     public TodoViewModel Todo { get; }
     public ShelfViewModel Shelf { get; }
     public AiAssistantViewModel AI { get; }
@@ -110,6 +111,7 @@ public partial class MainViewModel : ObservableObject
         Media = new MediaViewModel(mediaService, lyricsService);
         Timer = new TimerViewModel();
         Water = new WaterViewModel();
+        Weather = new WeatherViewModel();
         Todo = new TodoViewModel();
         Shelf = new ShelfViewModel();
         AI = new AiAssistantViewModel(aiService);
