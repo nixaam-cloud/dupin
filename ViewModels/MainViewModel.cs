@@ -130,8 +130,13 @@ public partial class MainViewModel : ObservableObject
             IsCharging = SystemStatus.IsCharging;
         };
 
+        NotificationListener.RecentNotifications.CollectionChanged += (s, e) =>
+        {
+            NotificationCount = NotificationListener.RecentNotifications.Count;
+        };
         NotificationListener.NotificationReceived += OnNotificationReceived;
         _ = NotificationListener.InitializeAsync();
+        NotificationCount = NotificationListener.RecentNotifications.Count;
 
         Media.PropertyChanged += (s, e) =>
         {
