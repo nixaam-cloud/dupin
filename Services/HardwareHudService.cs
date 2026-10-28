@@ -40,7 +40,6 @@ public class HardwareHudService : IDisposable
     private bool _lastMicMuted = false;
     private int _lastBrightness = -1;
     private int _brightnessTickCounter = 0;
-    private bool _initialized = false;
 
     public event Action<HardwareHudEventArgs>? HudTriggered;
 
@@ -84,7 +83,6 @@ public class HardwareHudService : IDisposable
 
         // Read baseline state without firing HUD on startup
         CheckAudioAndHardwareState(forceTrigger: false, isInitial: true);
-        _initialized = true;
         _pollTimer.Start();
     }
 

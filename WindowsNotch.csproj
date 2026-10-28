@@ -9,7 +9,7 @@
     <Company>Dupin</Company>
     <Description>Dupin — Smart Dynamic Island &amp; AI Companion for Windows</Description>
     <Copyright>Copyright © 2026 Dupin</Copyright>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <ApplicationIcon>Resources\dupin.ico</ApplicationIcon>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
