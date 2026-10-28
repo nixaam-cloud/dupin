@@ -938,8 +938,19 @@
                                         <Button Style="{StaticResource NotchIconButtonStyle}"
                                                 Padding="6,3"
                                                 Command="{Binding Water.ToggleReminderCommand}"
-                                                ToolTip="Toggle Periodic Reminder">
-                                            <TextBlock Text="🔔 Remind" FontSize="9.5" Foreground="{StaticResource TextMutedBrush}" />
+                                                ToolTip="Toggle Periodic Water Reminder (every 30m)">
+                                            <TextBlock Text="{Binding Water.ReminderButtonText}" FontSize="9.5" FontWeight="Medium">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Water.IsReminderEnabled}" Value="True">
+                                                                <Setter Property="Foreground" Value="#38BDF8" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
                                         </Button>
                                     </StackPanel>
                                 </StackPanel>

@@ -118,7 +118,11 @@ public partial class MainViewModel : ObservableObject
         Shelf.ItemCountChanged += count => ShelfCount = count;
         AI.ExportToShelfRequested += path => Shelf.AddFiles(new[] { path });
 
-        Water.ReminderFired += reminder => TriggerPeek("Water Reminder", reminder);
+        Water.ReminderFired += reminder =>
+        {
+            TriggerPeek("Water Reminder", reminder);
+            NotificationListener.PushNotification("Water", "Hydration Reminder 💧", reminder);
+        };
         SystemStatus.PeekNotificationTriggered += (title, sub) => TriggerPeek(title, sub);
         SystemStatus.StatusUpdated += () =>
         {

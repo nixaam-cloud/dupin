@@ -40,3 +40,4 @@ dotnet publish WindowsNotch.csproj -c Release -r win-x64 --self-contained true -
 - **Expand / Collapse**: Hover over the top notch or press **`Win + Ctrl + N`**
 - **System Tray**: Right-click the Dupin tray icon to toggle visibility, enable **Launch Dupin at Windows Startup**, or exit.
 - **Data Storage**: Settings, API keys, tasks, hydration logs, and parked shelf items are persisted locally in `%APPDATA%\Dupin`.
+

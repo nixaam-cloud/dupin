@@ -24,6 +24,7 @@ public partial class WaterViewModel : ObservableObject
     private int _dailyGoalMl = 2000;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ReminderButtonText))]
     private bool _isReminderEnabled = true;
 
     [ObservableProperty]
@@ -31,6 +32,8 @@ public partial class WaterViewModel : ObservableObject
 
     [ObservableProperty]
     private string _badgeText = "💧 0.0L";
+
+    public string ReminderButtonText => IsReminderEnabled ? "🔔 Remind: ON" : "🔕 Remind: OFF";
 
     public event Action<string>? ReminderFired;
 
@@ -60,11 +63,11 @@ public partial class WaterViewModel : ObservableObject
         _waterPath = Path.Combine(dupinDir, "water.json");
 
         LoadState();
-        UpdateStats(incrementBucket: false);
+        UpdateStats(addedAmountMl: 0);
 
         _reminderTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMinutes(45)
+            Interval = TimeSpan.FromMinutes(30)
         };
         _reminderTimer.Tick += (s, e) =>
         {
@@ -72,7 +75,7 @@ public partial class WaterViewModel : ObservableObject
             if (IsReminderEnabled && !IsGoalReached)
             {
                 try { SystemSounds.Asterisk.Play(); } catch { }
-                ReminderFired?.Invoke("Drink Water 💧");
+                ReminderFired?.Invoke($"Time to drink water! ({IntakeLitersText} / {(DailyGoalMl / 1000.0):0.0} L today) 💧");
             }
         };
         if (IsReminderEnabled)
@@ -89,7 +92,7 @@ public partial class WaterViewModel : ObservableObject
             _trackedDate = today;
             CurrentIntakeMl = 0;
             foreach (var stat in HourlyStats) stat.AmountMl = 0;
-            UpdateStats(incrementBucket: false);
+            UpdateStats(addedAmountMl: 0);
             SaveState();
         }
     }
@@ -149,11 +152,12 @@ public partial class WaterViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public void Drink(int amount = 250)
+    public void Drink()
     {
+        const int amount = 250;
         EnsureToday();
         CurrentIntakeMl += amount;
-        UpdateStats(incrementBucket: true);
+        UpdateStats(addedAmountMl: amount);
         SaveState();
 
         try { SystemSounds.Beep.Play(); } catch { }
@@ -165,7 +169,7 @@ public partial class WaterViewModel : ObservableObject
         _trackedDate = DateTime.Today.ToString("yyyy-MM-dd");
         CurrentIntakeMl = 0;
         foreach (var stat in HourlyStats) stat.AmountMl = 0;
-        UpdateStats(incrementBucket: false);
+        UpdateStats(addedAmountMl: 0);
         SaveState();
     }
 
@@ -174,13 +178,22 @@ public partial class WaterViewModel : ObservableObject
     {
         IsReminderEnabled = !IsReminderEnabled;
         if (IsReminderEnabled)
-            _reminderTimer.Start();
-        else
+        {
             _reminderTimer.Stop();
+            _reminderTimer.Start();
+            StatusMessage = $"🔔 Remind ON (every 30m) · {IntakePercentage:0}%";
+            try { SystemSounds.Asterisk.Play(); } catch { }
+            ReminderFired?.Invoke($"Hydration reminders enabled (every 30m) · {IntakeLitersText}L logged today 💧");
+        }
+        else
+        {
+            _reminderTimer.Stop();
+            StatusMessage = $"🔕 Remind OFF · {IntakePercentage:0}%";
+        }
         SaveState();
     }
 
-    private void UpdateStats(bool incrementBucket)
+    private void UpdateStats(int addedAmountMl)
     {
         IntakePercentage = Math.Min(100.0, Math.Round((double)CurrentIntakeMl / Math.Max(1, DailyGoalMl) * 100));
         OnPropertyChanged(nameof(IntakeLitersText));
@@ -194,11 +207,11 @@ public partial class WaterViewModel : ObservableObject
         }
         else
         {
-            StatusMessage = $"Today · {IntakePercentage:0}% · In Progress";
+            StatusMessage = $"Today · {IntakePercentage:0}% · {(CurrentIntakeMl == 0 ? "Stay Hydrated" : "On Track")}";
             BadgeText = $"💧 {CurrentIntakeMl}ml";
         }
 
-        if (incrementBucket)
+        if (addedAmountMl > 0)
         {
             int currentHour = DateTime.Now.Hour;
             int bucketIndex = currentHour switch
@@ -212,7 +225,7 @@ public partial class WaterViewModel : ObservableObject
 
             if (bucketIndex < HourlyStats.Count)
             {
-                HourlyStats[bucketIndex].AmountMl = Math.Min(400, HourlyStats[bucketIndex].AmountMl + 50);
+                HourlyStats[bucketIndex].AmountMl = Math.Min(500, HourlyStats[bucketIndex].AmountMl + addedAmountMl);
             }
         }
     }
