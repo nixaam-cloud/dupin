@@ -29,6 +29,11 @@ public partial class MainWindow : Window
     private const double EXPANDED_WIDTH = 600;
     private const double EXPANDED_HEIGHT = 224;
 
+    private double _userExpandedHeight = EXPANDED_HEIGHT;
+    private bool _isResizingBottom = false;
+    private double _resizeStartMouseY = 0;
+    private double _resizeStartHeight = 0;
+
     private readonly DispatcherTimer _collapseTimer;
     private readonly DispatcherTimer _inactivityTimer;
     private readonly DispatcherTimer _cursorMonitorTimer;
@@ -69,12 +74,18 @@ public partial class MainWindow : Window
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        this.Height = COLLAPSED_HEIGHT + 32;
         UpdatePosition(force: true);
         _cursorMonitorTimer.Start();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
         if (DataContext is MainViewModel vm)
         {
+            if (vm.AI.ExpandedHeight >= EXPANDED_HEIGHT)
+            {
+                _userExpandedHeight = vm.AI.ExpandedHeight;
+            }
+
             if (string.Equals(vm.AI.SelectedProvider, "Claude", StringComparison.OrdinalIgnoreCase))
             {
                 AiProviderClaude.IsChecked = true;
@@ -318,6 +329,8 @@ public partial class MainWindow : Window
 
     private void NotchContainer_MouseEnter(object sender, MouseEventArgs e)
     {
+        if (_isResizingBottom) return;
+
         // Browser Tab-Drag Immunity: If the user is dragging a browser tab or window near the top of the screen
         // (left mouse button already pressed when entering the notch), do NOT expand the notch.
         if (ScreenHelper.IsLeftMouseButtonDown() || e.LeftButton == MouseButtonState.Pressed)
@@ -336,6 +349,8 @@ public partial class MainWindow : Window
 
     private void NotchContainer_MouseLeave(object sender, MouseEventArgs e)
     {
+        if (_isResizingBottom) return;
+
         _collapseTimer.Stop();
         _collapseTimer.Start();
     }
@@ -343,6 +358,8 @@ public partial class MainWindow : Window
     private void OnCollapseTimerTick(object? sender, EventArgs e)
     {
         _collapseTimer.Stop();
+        if (_isResizingBottom) return;
+
         if (_isExpanded && !NotchContainer.IsMouseOver)
         {
             AnimateCollapse();
@@ -384,6 +401,8 @@ public partial class MainWindow : Window
         _collapseTimer.Stop();
         _inactivityTimer.Stop();
 
+        this.Height = MINIMAL_HEIGHT + 32;
+
         var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
         var duration = TimeSpan.FromMilliseconds(300);
 
@@ -412,6 +431,8 @@ public partial class MainWindow : Window
         {
             vm.IsMinimal = false;
         }
+
+        this.Height = COLLAPSED_HEIGHT + 32;
 
         var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
         var duration = TimeSpan.FromMilliseconds(240);
@@ -444,6 +465,8 @@ public partial class MainWindow : Window
             vm.IsMinimal = false;
         }
 
+        this.Height = HUD_HEIGHT + 32;
+
         var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
         var duration = TimeSpan.FromMilliseconds(200);
 
@@ -472,6 +495,8 @@ public partial class MainWindow : Window
         {
             vm.IsMinimal = false;
         }
+
+        this.Height = NOTIFICATION_HEIGHT + 32;
 
         var bounceEase = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.2 };
         var duration = TimeSpan.FromMilliseconds(320);
@@ -583,6 +608,8 @@ public partial class MainWindow : Window
             vm.IsMinimal = false;
         }
 
+        this.Height = Math.Max(260, _userExpandedHeight + 36);
+
         ExpandedContent.Visibility = Visibility.Visible;
 
         var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
@@ -599,7 +626,7 @@ public partial class MainWindow : Window
         // Container Height Animation
         var heightAnim = new DoubleAnimation
         {
-            To = EXPANDED_HEIGHT,
+            To = _userExpandedHeight,
             Duration = duration,
             EasingFunction = cubicEase
         };
@@ -699,6 +726,7 @@ public partial class MainWindow : Window
             if (!_isExpanded)
             {
                 ExpandedContent.Visibility = Visibility.Collapsed;
+                this.Height = Math.Max(60, targetHeight + 32);
             }
         };
 
@@ -863,6 +891,109 @@ public partial class MainWindow : Window
             if (vm.Weather.SearchCityCommand.CanExecute(null))
             {
                 vm.Weather.SearchCityCommand.Execute(null);
+            }
+            e.Handled = true;
+        }
+    }
+
+    private void BottomResizeHandle_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            // Double-click resets back to default height (224px)
+            _userExpandedHeight = EXPANDED_HEIGHT;
+            if (DataContext is MainViewModel vm)
+            {
+                vm.AI.ExpandedHeight = _userExpandedHeight;
+                vm.AI.SaveSettings();
+            }
+
+            if (_isExpanded)
+            {
+                this.Height = Math.Max(260, _userExpandedHeight + 36);
+                var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
+                var heightAnim = new DoubleAnimation
+                {
+                    To = _userExpandedHeight,
+                    Duration = TimeSpan.FromMilliseconds(220),
+                    EasingFunction = cubicEase
+                };
+                NotchContainer.BeginAnimation(HeightProperty, heightAnim);
+            }
+            e.Handled = true;
+            return;
+        }
+
+        _isResizingBottom = true;
+        _resizeStartMouseY = PointToScreen(e.GetPosition(this)).Y;
+        _resizeStartHeight = NotchContainer.ActualHeight;
+
+        _collapseTimer.Stop();
+        _inactivityTimer.Stop();
+
+        // If currently collapsed when dragged, transition to expanded view
+        if (!_isExpanded)
+        {
+            AnimateExpand();
+            _resizeStartHeight = _userExpandedHeight;
+        }
+
+        NotchContainer.BeginAnimation(HeightProperty, null);
+        NotchContainer.Height = _resizeStartHeight;
+        this.Height = Math.Max(this.Height, _resizeStartHeight + 40);
+
+        if (sender is UIElement uie)
+        {
+            uie.CaptureMouse();
+        }
+        e.Handled = true;
+    }
+
+    private void BottomResizeHandle_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_isResizingBottom)
+        {
+            double currentMouseY = PointToScreen(e.GetPosition(this)).Y;
+            double deltaY = currentMouseY - _resizeStartMouseY;
+            double targetHeight = _resizeStartHeight + deltaY;
+
+            // Clamping: minimum 224px, maximum up to screen work area height - 60px (or 850px max)
+            double minHeight = EXPANDED_HEIGHT;
+            double maxHeight = Math.Max(400, ScreenHelper.PrimaryScreenHeight - 60);
+            targetHeight = Math.Clamp(targetHeight, minHeight, maxHeight);
+
+            if (this.Height < targetHeight + 40)
+            {
+                this.Height = targetHeight + 40;
+            }
+
+            NotchContainer.Height = targetHeight;
+            _userExpandedHeight = targetHeight;
+            e.Handled = true;
+        }
+    }
+
+    private void BottomResizeHandle_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isResizingBottom)
+        {
+            _isResizingBottom = false;
+            if (sender is UIElement uie)
+            {
+                uie.ReleaseMouseCapture();
+            }
+
+            this.Height = Math.Max(260, NotchContainer.ActualHeight + 36);
+
+            if (DataContext is MainViewModel vm)
+            {
+                vm.AI.ExpandedHeight = _userExpandedHeight;
+                vm.AI.SaveSettings();
+            }
+
+            if (!NotchContainer.IsMouseOver)
+            {
+                _collapseTimer.Start();
             }
             e.Handled = true;
         }

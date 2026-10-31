@@ -61,6 +61,14 @@ public partial class AiAssistantViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSettingsVisible = false;
 
+    public double ExpandedHeight
+    {
+        get => _aiService.ExpandedHeight;
+        set => _aiService.ExpandedHeight = value;
+    }
+
+    public void SaveSettings() => _aiService.SaveSettings();
+
     public event Action<string>? ExportToShelfRequested;
 
     public AiAssistantViewModel(AiClientService aiService)

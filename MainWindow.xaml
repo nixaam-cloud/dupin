@@ -14,7 +14,7 @@
         ShowInTaskbar="False"
         ResizeMode="NoResize"
         Width="620"
-        Height="248"
+        Height="64"
         WindowStartupLocation="Manual">
 
     <Window.DataContext>
@@ -22,7 +22,7 @@
     </Window.DataContext>
 
     <!-- Outer Canvas / Grid with hit test transparency -->
-    <Grid Background="Transparent">
+    <Grid Background="{x:Null}">
         <!-- Floating Notch Container -->
         <Border x:Name="NotchContainer"
                 HorizontalAlignment="Center"
@@ -2275,6 +2275,39 @@
                         </Grid>
                     </Border>
                 </Grid>
+
+                <!-- Bottom Drag / Resize Handle -->
+                <Border x:Name="BottomResizeHandle"
+                        VerticalAlignment="Bottom"
+                        HorizontalAlignment="Stretch"
+                        Height="14"
+                        Background="Transparent"
+                        Cursor="SizeNS"
+                        ToolTip="Drag down to expand height • Double-click to reset (224px)"
+                        PreviewMouseLeftButtonDown="BottomResizeHandle_PreviewMouseLeftButtonDown"
+                        MouseMove="BottomResizeHandle_MouseMove"
+                        PreviewMouseLeftButtonUp="BottomResizeHandle_PreviewMouseLeftButtonUp">
+                    <!-- Subtle Pill Grab Bar -->
+                    <Border HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Width="38"
+                            Height="3.5"
+                            CornerRadius="1.75"
+                            Background="#38384C"
+                            Opacity="0.75"
+                            Margin="0,0,0,2">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border, AncestorLevel=1}}" Value="True">
+                                        <Setter Property="Background" Value="#A78BFA" />
+                                        <Setter Property="Opacity" Value="1.0" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </Border>
             </Grid>
         </Border>
     </Grid>

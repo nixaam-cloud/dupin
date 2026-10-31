@@ -18,6 +18,7 @@ public class AiClientService
     public string ClaudeApiKey { get; set; } = string.Empty;
     public string OpenAiApiKey { get; set; } = string.Empty;
     public string SelectedProvider { get; set; } = "Gemini";
+    public double ExpandedHeight { get; set; } = 224;
 
     public AiClientService()
     {
@@ -52,6 +53,8 @@ public class AiClientService
                     OpenAiApiKey = oKey.GetString() ?? "";
                 if (doc.RootElement.TryGetProperty("SelectedProvider", out var sProv) && !string.IsNullOrWhiteSpace(sProv.GetString()))
                     SelectedProvider = sProv.GetString()!;
+                if (doc.RootElement.TryGetProperty("ExpandedHeight", out var expHeight) && expHeight.TryGetDouble(out double eh) && eh >= 200)
+                    ExpandedHeight = eh;
             }
         }
         catch { }
@@ -66,7 +69,8 @@ public class AiClientService
                 GeminiApiKey,
                 ClaudeApiKey,
                 OpenAiApiKey,
-                SelectedProvider
+                SelectedProvider,
+                ExpandedHeight
             };
             string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_settingsPath, json);
