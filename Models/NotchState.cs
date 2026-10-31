@@ -17,5 +17,6 @@ public enum NotchTab
     Todo,
     Shelf,
     AI,
+    Usage,
     Notifications
 }

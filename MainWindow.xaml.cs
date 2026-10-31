@@ -26,7 +26,7 @@ public partial class MainWindow : Window
     private const double HUD_HEIGHT = 34;
     private const double NOTIFICATION_WIDTH = 320;
     private const double NOTIFICATION_HEIGHT = 38;
-    private const double EXPANDED_WIDTH = 600;
+    private const double EXPANDED_WIDTH = 650;
     private const double EXPANDED_HEIGHT = 224;
 
     private double _userExpandedHeight = EXPANDED_HEIGHT;
@@ -177,6 +177,26 @@ public partial class MainWindow : Window
                 Dispatcher.Invoke(() => ApplyWeatherEyeGlow(vm.Weather.ActiveVisualEffect));
             };
             ApplyWeatherEyeGlow(vm.Weather.ActiveVisualEffect);
+
+            vm.Usage.UsageRefreshed += () =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _trayManager?.UpdateTooltip(vm.Usage.BuildTraySummary());
+                });
+            };
+            _trayManager?.UpdateTooltip(vm.Usage.BuildTraySummary());
+
+            vm.Usage.WorkflowNotification += ev =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    string title = string.IsNullOrWhiteSpace(ev.Project)
+                        ? $"{ev.ToolName} • {ev.Title}"
+                        : $"{ev.ToolName} ({ev.Project}) • {ev.Title}";
+                    _trayManager?.ShowBalloonNotification(title, ev.Message);
+                });
+            };
         }
 
         ResetInactivityTimer();
@@ -248,6 +268,38 @@ public partial class MainWindow : Window
         _trayManager = new TrayIconManager(this, _hwnd);
         _trayManager.Initialize();
         _trayManager.ToggleRequested += ToggleVisibilityOrExpand;
+        _trayManager.OpenTabRequested += tabName =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (_isForceHidden)
+                {
+                    _isForceHidden = false;
+                    this.Visibility = Visibility.Visible;
+                }
+                if (DataContext is MainViewModel mvm)
+                {
+                    mvm.SelectTab(tabName);
+                }
+                if (string.Equals(tabName, "Usage", StringComparison.OrdinalIgnoreCase) && UsageTabButton != null)
+                    UsageTabButton.IsChecked = true;
+                else if (string.Equals(tabName, "AI", StringComparison.OrdinalIgnoreCase) && AiTabButton != null)
+                    AiTabButton.IsChecked = true;
+                else if (string.Equals(tabName, "Shelf", StringComparison.OrdinalIgnoreCase) && ShelfTabButton != null)
+                    ShelfTabButton.IsChecked = true;
+                else if (string.Equals(tabName, "Notifications", StringComparison.OrdinalIgnoreCase) && AlertsTabButton != null)
+                    AlertsTabButton.IsChecked = true;
+
+                if (!_isExpanded)
+                {
+                    AnimateExpand();
+                }
+            });
+        };
+        _trayManager.ScreenSnipRequested += () =>
+        {
+            Dispatcher.Invoke(() => SnipScreenButton_Click(this, new RoutedEventArgs()));
+        };
 
         // Initialize Hardware HUD Interceptor (Volume, Mic-Mute, Brightness)
         if (DataContext is MainViewModel vm)
@@ -896,6 +948,14 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UsageSetting_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.Usage.SaveSettings();
+        }
+    }
+
     private void BottomResizeHandle_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ClickCount == 2)
@@ -1017,6 +1077,7 @@ public partial class MainWindow : Window
         {
             vm.SystemStatus.Dispose();
             vm.HardwareHud.Dispose();
+            vm.Usage.Dispose();
         }
 
         if (_hwnd != IntPtr.Zero)

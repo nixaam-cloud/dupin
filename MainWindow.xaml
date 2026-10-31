@@ -13,7 +13,7 @@
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
-        Width="620"
+        Width="670"
         Height="64"
         WindowStartupLocation="Manual">
 
@@ -679,6 +679,24 @@
                                           Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
                                           Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
                                     <TextBlock Text="AI" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- AI Coding Usage & Workflows Tab -->
+                            <RadioButton x:Name="UsageTabButton"
+                                         Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Usage"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0"
+                                         ToolTip="Claude Code, Codex &amp; Antigravity Usage Tracker">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconUsage}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Usage" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                    <Ellipse Width="5" Height="5" Fill="#34D399" Margin="4,0,0,0" VerticalAlignment="Center"
+                                             Visibility="{Binding Usage.AnyActive, Converter={StaticResource BoolToVisConv}}" />
                                 </StackPanel>
                             </RadioButton>
 
@@ -2157,6 +2175,266 @@
                                         </StackPanel>
                                     </Grid>
                                 </Border>
+                            </Grid>
+
+                            <!-- ==================== MODULE I: AI CODING USAGE & WORKFLOWS ==================== -->
+                            <Grid x:Name="UsageTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Usage}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Top Bar: Combined Today Totals + Workflow Notification Toggles + Refresh -->
+                                <Grid Grid.Row="0" Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left: Total Token Badge & Active Status -->
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Width="7" Height="7" CornerRadius="3.5" Margin="0,0,6,0" VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#60A5FA" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Usage.AnyActive}" Value="True">
+                                                            <Setter Property="Background" Value="#34D399" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                        </Border>
+                                        <TextBlock Text="AI Coding Telemetry" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <Border Background="#1D1936" BorderBrush="#6D28D9" BorderThickness="1" CornerRadius="7" Padding="6,1" Margin="0,0,6,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Today: " FontSize="9" Foreground="#C4B5FD" />
+                                                <TextBlock Text="{Binding Usage.TodayTotalText}" FontSize="9.5" FontWeight="Bold" Foreground="#FFFFFF" />
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Text="{Binding Usage.ActiveSummary}" FontSize="9.5" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="150" />
+                                    </StackPanel>
+
+                                    <!-- Right: Workflow Alert Toggles & Refresh -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <CheckBox Content="Workflow Alerts"
+                                                  IsChecked="{Binding Usage.NotifyOnComplete}"
+                                                  Click="UsageSetting_Click"
+                                                  Foreground="#DDD6FE"
+                                                  FontSize="9.5"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,8,0"
+                                                  ToolTip="Trigger Dynamic Island &amp; Tray notifications when Claude Code, Codex, or Antigravity finishes a task" />
+
+                                        <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                Width="22" Height="22" Padding="4"
+                                                Command="{Binding Usage.RefreshCommand}"
+                                                ToolTip="Rescan Claude Code, Codex &amp; Antigravity logs now">
+                                            <Path Data="{StaticResource IconReset}"
+                                                  Fill="{StaticResource TextSecondaryBrush}"
+                                                  Width="10" Height="10" Stretch="Uniform" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Main Body: Left = 3 Tool Telemetry Cards | Right = Workflow Completion Feed -->
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3.3*" />
+                                        <ColumnDefinition Width="2.1*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left: Claude Code, Codex, and Antigravity Cards -->
+                                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,6,0">
+                                        <ItemsControl ItemsSource="{Binding Usage.Tools}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#151520"
+                                                            BorderBrush="#252536"
+                                                            BorderThickness="1"
+                                                            CornerRadius="9"
+                                                            Padding="8,5"
+                                                            Margin="0,0,2,5">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                                <RowDefinition Height="Auto" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <!-- Row 0: Tool Name + Status Pill + Today Tokens + Open Folder -->
+                                                            <Grid Grid.Row="0">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <Border Width="6" Height="14" CornerRadius="3" Background="{Binding AccentBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                                    <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                                    <Border Background="#1F2433" CornerRadius="5" Padding="5,1" VerticalAlignment="Center">
+                                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                            <Ellipse Width="5" Height="5" Fill="{Binding StatusDotBrush}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                                            <TextBlock Text="{Binding StatusText}" FontSize="8.5" FontWeight="SemiBold" Foreground="#E2E8F0" VerticalAlignment="Center" />
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                </StackPanel>
+
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="{Binding LastActivityText}"
+                                                                           FontSize="8.5"
+                                                                           Foreground="{StaticResource TextMutedBrush}"
+                                                                           VerticalAlignment="Center"
+                                                                           HorizontalAlignment="Right"
+                                                                           Margin="6,0,8,0" />
+
+                                                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding TodayTotalText}"
+                                                                               FontSize="12"
+                                                                               FontWeight="Bold"
+                                                                               Foreground="{Binding AccentBrush}"
+                                                                               VerticalAlignment="Center"
+                                                                               Margin="0,0,4,0" />
+                                                                    <TextBlock Text="tok"
+                                                                               FontSize="8.5"
+                                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                                               VerticalAlignment="Center"
+                                                                               Margin="0,0,4,0" />
+                                                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                                            Width="18" Height="18" Padding="3"
+                                                                            ToolTip="Open log directory in Explorer"
+                                                                            Command="{Binding DataContext.Usage.OpenToolFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                            CommandParameter="{Binding}">
+                                                                        <Path Data="{StaticResource IconShelf}"
+                                                                              Fill="{StaticResource TextMutedBrush}"
+                                                                              Width="9" Height="9" Stretch="Uniform" />
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </Grid>
+
+                                                            <!-- Row 1: Token Breakdown + Turns/7d + Model/Project -->
+                                                            <Grid Grid.Row="1" Margin="12,2,0,3">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0">
+                                                                    <TextBlock Text="{Binding TodayBreakdownText}"
+                                                                               FontSize="8.5"
+                                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                                               TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock Text="{Binding ModelAndProjectText}"
+                                                                               FontSize="8.5"
+                                                                               Foreground="#94A3B8"
+                                                                               TextTrimming="CharacterEllipsis" />
+                                                                </StackPanel>
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="{Binding TodayActivityText}"
+                                                                           FontSize="8.5"
+                                                                           FontWeight="Medium"
+                                                                           Foreground="#CBD5E1"
+                                                                           VerticalAlignment="Bottom"
+                                                                           Margin="6,0,0,0" />
+                                                            </Grid>
+
+                                                            <!-- Row 2: Share Bar -->
+                                                            <Border Grid.Row="2" Height="3.5" CornerRadius="1.75" Background="#222230" Margin="12,0,0,0" ClipToBounds="True">
+                                                                <Border HorizontalAlignment="Left"
+                                                                        Width="{Binding ShareBarWidth}"
+                                                                        Height="3.5"
+                                                                        CornerRadius="1.75"
+                                                                        Background="{Binding AccentBrush}" />
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+
+                                    <!-- Right: Live AI Coding Workflow Events Feed -->
+                                    <Border Grid.Column="1"
+                                            Background="#14141D"
+                                            BorderBrush="#232334"
+                                            BorderThickness="1"
+                                            CornerRadius="9"
+                                            Padding="8,6">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Feed Header -->
+                                            <Grid Grid.Row="0" Margin="0,0,0,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Path Data="{StaticResource IconTerminal}" Fill="#A78BFA" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="Workflow Feed" FontSize="10" FontWeight="SemiBold" Foreground="#ECEFF7" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                                <Button Grid.Column="1"
+                                                        Content="Clear"
+                                                        Style="{StaticResource NotchIconButtonStyle}"
+                                                        Padding="5,1"
+                                                        FontSize="8.5"
+                                                        Command="{Binding Usage.ClearEventsCommand}"
+                                                        ToolTip="Clear workflow event feed" />
+                                            </Grid>
+
+                                            <!-- Empty State or Scrollable Event List -->
+                                            <Grid Grid.Row="1">
+                                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                            Visibility="{Binding Usage.HasEvents, Converter={StaticResource InverseBoolToVisConv}}">
+                                                    <Path Data="{StaticResource IconTerminal}" Fill="#3B3B52" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                                    <TextBlock Text="Listening for AI workflows..." FontSize="9.5" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                                                    <TextBlock Text="Turn &amp; task completions from Claude, Codex, and Antigravity appear here."
+                                                               FontSize="8.5" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" TextAlignment="Center" Margin="4,2,4,0" />
+                                                </StackPanel>
+
+                                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                                              Visibility="{Binding Usage.HasEvents, Converter={StaticResource BoolToVisConv}}">
+                                                    <ItemsControl ItemsSource="{Binding Usage.RecentEvents}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Background="#1B1B28"
+                                                                        BorderBrush="#2A2A3D"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="7"
+                                                                        Padding="6,4"
+                                                                        Margin="0,0,2,4">
+                                                                    <StackPanel>
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock Grid.Column="0" Text="{Binding ToolName}" FontSize="8.5" FontWeight="Bold" Foreground="#C4B5FD" />
+                                                                            <TextBlock Grid.Column="1" Text="{Binding Project}" FontSize="8" Foreground="#94A3B8" Margin="5,0,4,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                                            <TextBlock Grid.Column="2" Text="{Binding TimeText}" FontSize="8" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
+                                                                        </Grid>
+                                                                        <TextBlock Text="{Binding Message}"
+                                                                                   FontSize="8.5"
+                                                                                   Foreground="#E2E8F0"
+                                                                                   TextWrapping="Wrap"
+                                                                                   MaxHeight="34"
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   Margin="0,2,0,0" />
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
                             </Grid>
 
                             <!-- ==================== MODULE H: NOTIFICATIONS / ALERTS ==================== -->

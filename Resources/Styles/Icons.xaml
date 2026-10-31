@@ -99,4 +99,10 @@
 
     <!-- Zip / Archive Icon -->
     <Geometry x:Key="IconZip">M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 6h-2v2h2v2h-2v2h-2v-2h2v-2h-2v-2h2v-2h-2V8h2v2h2v2z</Geometry>
+
+    <!-- AI Usage / Analytics Chart Icon -->
+    <Geometry x:Key="IconUsage">M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z</Geometry>
+
+    <!-- Terminal / Coding Workflow Icon -->
+    <Geometry x:Key="IconTerminal">M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.59-2.59L7.5 9l4 4-4 4z</Geometry>
 </ResourceDictionary>

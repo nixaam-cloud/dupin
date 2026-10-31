@@ -134,6 +134,7 @@ public partial class MainViewModel : ObservableObject
     public SystemStatusService SystemStatus { get; }
     public NotificationListenerService NotificationListener { get; }
     public HardwareHudService HardwareHud { get; }
+    public UsageViewModel Usage { get; }
 
     public bool IsExpanded => State == NotchState.Expanded;
 
@@ -153,6 +154,14 @@ public partial class MainViewModel : ObservableObject
         Todo = new TodoViewModel();
         Shelf = new ShelfViewModel();
         AI = new AiAssistantViewModel(aiService);
+        Usage = new UsageViewModel();
+
+        // AI coding workflow notifications → notch banner + persistent Alerts history
+        Usage.WorkflowNotification += ev =>
+        {
+            string title = string.IsNullOrWhiteSpace(ev.Project) ? ev.Title : $"{ev.Title} · {ev.Project}";
+            NotificationListener.PushNotification(ev.ToolName, title, ev.Message);
+        };
 
         Timer.BadgeUpdated += badge => TimerBadge = badge;
         Shelf.ItemCountChanged += count => ShelfCount = count;
