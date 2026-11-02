@@ -488,18 +488,23 @@
                         </Grid>
 
                         <!-- 2B: Active Media / Music Pill (when playing media) -->
-                        <Grid Visibility="{Binding IsRestingMascot, Converter={StaticResource InverseBoolToVisConv}}">
+                        <Grid Visibility="{Binding IsRestingMascot, Converter={StaticResource InverseBoolToVisConv}}"
+                              HorizontalAlignment="Center"
+                              Background="Transparent"
+                              Cursor="Hand"
+                              ToolTip="Click to shrink pill out of the way of browser tabs"
+                              MouseLeftButtonDown="MediaPill_MouseDown">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Left: Pulsing Green Dot + Mini Waveform -->
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Left (or Centered in Minimal Mode): Pulsing Green Dot + Mini Waveform -->
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                                 <Border Width="6" Height="6" CornerRadius="3"
                                         Background="#10B981"
-                                        VerticalAlignment="Center" Margin="0,0,6,0">
+                                        VerticalAlignment="Center" Margin="0,0,5,0">
                                     <Border.Triggers>
                                         <EventTrigger RoutedEvent="Loaded">
                                             <BeginStoryboard>
@@ -516,8 +521,12 @@
                                       Width="11" Height="11" Stretch="Uniform" />
                             </StackPanel>
 
-                            <!-- Center: Track Title Ticker -->
-                            <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="6,0,6,0">
+                            <!-- Center: Track Title Ticker (hidden in minimal mode so pill shrinks to tiny 64x18) -->
+                            <Grid Grid.Column="1"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Margin="6,0,6,0"
+                                  Visibility="{Binding IsMinimal, Converter={StaticResource InverseBoolToVisConv}}">
                                 <TextBlock Text="{Binding Media.TrackTitle}"
                                            FontSize="11"
                                            FontWeight="SemiBold"
@@ -527,8 +536,11 @@
                                            Opacity="0.9" />
                             </Grid>
 
-                            <!-- Right: Mini Timer / Badge -->
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Right: Mini Timer / Badge (hidden in minimal mode) -->
+                            <StackPanel Grid.Column="2"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsMinimal, Converter={StaticResource InverseBoolToVisConv}}">
                                 <Path Data="{StaticResource IconTimer}"
                                       Fill="{StaticResource TextMutedBrush}"
                                       Width="11" Height="11"
@@ -744,10 +756,22 @@
                             </Border>
 
                             <Button Style="{StaticResource NotchIconButtonStyle}"
+                                    Width="22" Height="22"
+                                    Padding="4"
+                                    Margin="0,0,2,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Shrink to tiny pill so browser tabs underneath stay clickable"
+                                    Click="MinimizeToTinyPillButton_Click">
+                                <Border Width="9" Height="2" CornerRadius="1"
+                                        Background="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Button>
+
+                            <Button Style="{StaticResource NotchIconButtonStyle}"
                                     Width="24" Height="24"
                                     Padding="4"
                                     VerticalAlignment="Center"
-                                    ToolTip="Collapse (Win+Ctrl+N)"
+                                    ToolTip="Collapse to tiny pill (Win+Ctrl+N)"
                                     Click="CollapseButton_Click">
                                 <Path Data="{StaticResource IconClose}"
                                       Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -1893,8 +1917,9 @@
                                         </Button>
                                         <Button Style="{StaticResource NotchIconButtonStyle}"
                                                 Width="22" Height="22" Padding="3"
-                                                Command="{Binding AI.CopyResponseCommand}"
-                                                ToolTip="Copy Response">
+                                                Focusable="False"
+                                                Click="CopyAiResponseButton_Click"
+                                                ToolTip="Copy selected text (or full response if nothing selected)">
                                             <Path Data="{StaticResource IconCopy}"
                                                   Fill="{StaticResource TextSecondaryBrush}"
                                                   Width="10" Height="10" Stretch="Uniform" />
@@ -2102,21 +2127,52 @@
                                                                FontWeight="SemiBold"
                                                                Foreground="#A78BFA"
                                                                Margin="0,0,0,1" />
-                                                    <TextBlock Text="{Binding AI.ThinkingText}"
-                                                               FontSize="9.5"
-                                                               FontStyle="Italic"
-                                                               Foreground="{StaticResource TextMutedBrush}"
-                                                               TextWrapping="Wrap"
-                                                               MaxHeight="42"
-                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBox x:Name="AiThinkingTextBox"
+                                                             Text="{Binding AI.ThinkingText, Mode=OneWay}"
+                                                             IsReadOnly="True"
+                                                             IsReadOnlyCaretVisible="False"
+                                                             FontSize="9.5"
+                                                             FontStyle="Italic"
+                                                             Foreground="{StaticResource TextMutedBrush}"
+                                                             Background="Transparent"
+                                                             BorderThickness="0"
+                                                             Padding="0"
+                                                             TextWrapping="Wrap"
+                                                             AcceptsReturn="True"
+                                                             SelectionBrush="#8B5CF6"
+                                                             SelectionOpacity="0.45"
+                                                             MaxHeight="48"
+                                                             VerticalScrollBarVisibility="Auto" />
                                                 </StackPanel>
                                             </Border>
 
-                                            <!-- Main Response Text -->
-                                            <TextBlock Text="{Binding AI.ResponseText}"
-                                                       FontSize="11"
-                                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                                       TextWrapping="Wrap" />
+                                            <!-- Main Response Text (Selectable for partial or full copy) -->
+                                            <TextBox x:Name="AiResponseTextBox"
+                                                     Text="{Binding AI.ResponseText, Mode=OneWay}"
+                                                     IsReadOnly="True"
+                                                     IsReadOnlyCaretVisible="False"
+                                                     FontSize="11"
+                                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     Padding="0"
+                                                     TextWrapping="Wrap"
+                                                     AcceptsReturn="True"
+                                                     SelectionBrush="#8B5CF6"
+                                                     SelectionOpacity="0.45"
+                                                     Cursor="IBeam">
+                                                <TextBox.ContextMenu>
+                                                    <ContextMenu x:Name="AiResponseContextMenu">
+                                                        <MenuItem Header="Copy Selected Text (Ctrl+C)"
+                                                                  Click="CopySelectedAiText_Click" />
+                                                        <MenuItem Header="Select All (Ctrl+A)"
+                                                                  Click="SelectAllAiText_Click" />
+                                                        <Separator />
+                                                        <MenuItem Header="Copy Entire Response"
+                                                                  Click="CopyFullAiResponse_Click" />
+                                                    </ContextMenu>
+                                                </TextBox.ContextMenu>
+                                            </TextBox>
                                         </StackPanel>
                                     </ScrollViewer>
                                 </Grid>

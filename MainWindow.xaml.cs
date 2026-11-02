@@ -18,8 +18,8 @@ public partial class MainWindow : Window
     private const int HOTKEY_ID = 9001;
 
     // Animation dimensions
-    private const double MINIMAL_WIDTH = 76;
-    private const double MINIMAL_HEIGHT = 22;
+    private const double MINIMAL_WIDTH = 64;
+    private const double MINIMAL_HEIGHT = 18;
     private const double COLLAPSED_WIDTH = 180;
     private const double COLLAPSED_HEIGHT = 32;
     private const double HUD_WIDTH = 228;
@@ -37,6 +37,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _collapseTimer;
     private readonly DispatcherTimer _inactivityTimer;
     private readonly DispatcherTimer _cursorMonitorTimer;
+    private readonly DispatcherTimer _hoverExpandTimer;
     private FullscreenDetector? _fullscreenDetector;
     private TrayIconManager? _trayManager;
     private IntPtr _hwnd = IntPtr.Zero;
@@ -44,6 +45,7 @@ public partial class MainWindow : Window
     private bool _isExpanded = false;
     private bool _isMinimal = false;
     private bool _isForceHidden = false;
+    private bool _suppressHoverExpandUntilLeave = false;
 
     public MainWindow()
     {
@@ -60,6 +62,13 @@ public partial class MainWindow : Window
             Interval = TimeSpan.FromSeconds(5.5)
         };
         _inactivityTimer.Tick += OnInactivityTimerTick;
+
+        // Short hover delay so clicking the collapsed/media pill shrinks it instead of instantly expanding
+        _hoverExpandTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(230)
+        };
+        _hoverExpandTimer.Tick += OnHoverExpandTimerTick;
 
         // Multi-Monitor Cursor Tracking timer
         _cursorMonitorTimer = new DispatcherTimer
@@ -381,7 +390,7 @@ public partial class MainWindow : Window
 
     private void NotchContainer_MouseEnter(object sender, MouseEventArgs e)
     {
-        if (_isResizingBottom) return;
+        if (_isResizingBottom || _suppressHoverExpandUntilLeave) return;
 
         // Browser Tab-Drag Immunity: If the user is dragging a browser tab or window near the top of the screen
         // (left mouse button already pressed when entering the notch), do NOT expand the notch.
@@ -395,12 +404,28 @@ public partial class MainWindow : Window
 
         if (!_isExpanded)
         {
+            _hoverExpandTimer.Stop();
+            _hoverExpandTimer.Start();
+        }
+    }
+
+    private void OnHoverExpandTimerTick(object? sender, EventArgs e)
+    {
+        _hoverExpandTimer.Stop();
+        if (_isResizingBottom || _suppressHoverExpandUntilLeave) return;
+        if (ScreenHelper.IsLeftMouseButtonDown()) return;
+
+        if (!_isExpanded && NotchContainer.IsMouseOver)
+        {
             AnimateExpand();
         }
     }
 
     private void NotchContainer_MouseLeave(object sender, MouseEventArgs e)
     {
+        _hoverExpandTimer.Stop();
+        _suppressHoverExpandUntilLeave = false;
+
         if (_isResizingBottom) return;
 
         _collapseTimer.Stop();
@@ -411,6 +436,13 @@ public partial class MainWindow : Window
     {
         _collapseTimer.Stop();
         if (_isResizingBottom) return;
+
+        // Do not collapse while the user is actively dragging a text selection or has the AI copy context menu open
+        if (ScreenHelper.IsLeftMouseButtonDown() || (AiResponseContextMenu != null && AiResponseContextMenu.IsOpen))
+        {
+            _collapseTimer.Start();
+            return;
+        }
 
         if (_isExpanded && !NotchContainer.IsMouseOver)
         {
@@ -423,7 +455,7 @@ public partial class MainWindow : Window
         _inactivityTimer.Stop();
         if (!_isExpanded && !_isMinimal && !NotchContainer.IsMouseOver)
         {
-            if (DataContext is MainViewModel vm && !vm.Media.IsPlaying && !vm.IsPeeking && !vm.IsNotificationActive && !vm.IsHardwareHudActive)
+            if (DataContext is MainViewModel vm && !vm.IsPeeking && !vm.IsNotificationActive && !vm.IsHardwareHudActive)
             {
                 AnimateToMinimal();
             }
@@ -445,18 +477,19 @@ public partial class MainWindow : Window
 
         if (DataContext is MainViewModel vm)
         {
-            if (vm.Media.IsPlaying || vm.IsPeeking || vm.IsNotificationActive || vm.IsHardwareHudActive) return;
+            if (vm.IsPeeking || vm.IsNotificationActive || vm.IsHardwareHudActive) return;
             vm.IsMinimal = true;
         }
 
         _isMinimal = true;
+        _hoverExpandTimer.Stop();
         _collapseTimer.Stop();
         _inactivityTimer.Stop();
 
         this.Height = MINIMAL_HEIGHT + 32;
 
         var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
-        var duration = TimeSpan.FromMilliseconds(300);
+        var duration = TimeSpan.FromMilliseconds(260);
 
         var widthAnim = new DoubleAnimation
         {
@@ -635,6 +668,7 @@ public partial class MainWindow : Window
 
     private void MascotEyes_MouseDown(object sender, MouseButtonEventArgs e)
     {
+        _hoverExpandTimer.Stop();
         if (!_isExpanded)
         {
             if (_isMinimal)
@@ -643,6 +677,25 @@ public partial class MainWindow : Window
             }
             else
             {
+                _suppressHoverExpandUntilLeave = true;
+                AnimateToMinimal();
+            }
+            e.Handled = true;
+        }
+    }
+
+    private void MediaPill_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _hoverExpandTimer.Stop();
+        if (!_isExpanded)
+        {
+            if (_isMinimal)
+            {
+                AnimateToCollapsed();
+            }
+            else
+            {
+                _suppressHoverExpandUntilLeave = true;
                 AnimateToMinimal();
             }
             e.Handled = true;
@@ -651,6 +704,7 @@ public partial class MainWindow : Window
 
     public void AnimateExpand()
     {
+        _hoverExpandTimer.Stop();
         _isExpanded = true;
         _isMinimal = false;
         _inactivityTimer.Stop();
@@ -713,18 +767,19 @@ public partial class MainWindow : Window
         ExpandedTransform.BeginAnimation(TranslateTransform.YProperty, translateAnim);
     }
 
-    public void AnimateCollapse()
+    public void AnimateCollapse(bool toMinimal = false)
     {
+        _hoverExpandTimer.Stop();
         _isExpanded = false;
-        _isMinimal = false;
+        _isMinimal = toMinimal;
 
-        double targetWidth = COLLAPSED_WIDTH;
-        double targetHeight = COLLAPSED_HEIGHT;
+        double targetWidth = toMinimal ? MINIMAL_WIDTH : COLLAPSED_WIDTH;
+        double targetHeight = toMinimal ? MINIMAL_HEIGHT : COLLAPSED_HEIGHT;
 
         if (DataContext is MainViewModel vm)
         {
-            vm.IsMinimal = false;
-            if (vm.IsNotificationActive)
+            vm.IsMinimal = toMinimal;
+            if (!toMinimal && vm.IsNotificationActive)
             {
                 targetWidth = NOTIFICATION_WIDTH;
                 targetHeight = NOTIFICATION_HEIGHT;
@@ -778,7 +833,7 @@ public partial class MainWindow : Window
             if (!_isExpanded)
             {
                 ExpandedContent.Visibility = Visibility.Collapsed;
-                this.Height = Math.Max(60, targetHeight + 32);
+                this.Height = Math.Max(50, targetHeight + 32);
             }
         };
 
@@ -788,7 +843,10 @@ public partial class MainWindow : Window
         ExpandedContent.BeginAnimation(OpacityProperty, fadeOutAnim);
         ExpandedTransform.BeginAnimation(TranslateTransform.YProperty, translateAnim);
 
-        ResetInactivityTimer();
+        if (!toMinimal)
+        {
+            ResetInactivityTimer();
+        }
     }
 
     private void TabButton_Click(object sender, RoutedEventArgs e)
@@ -803,9 +861,16 @@ public partial class MainWindow : Window
         }
     }
 
+    private void MinimizeToTinyPillButton_Click(object sender, RoutedEventArgs e)
+    {
+        _suppressHoverExpandUntilLeave = true;
+        AnimateCollapse(toMinimal: true);
+    }
+
     private void CollapseButton_Click(object sender, RoutedEventArgs e)
     {
-        AnimateCollapse();
+        _suppressHoverExpandUntilLeave = true;
+        AnimateCollapse(toMinimal: true);
     }
 
     private void NotchContainer_PreviewDragOver(object sender, DragEventArgs e)
@@ -909,6 +974,75 @@ public partial class MainWindow : Window
         if (sender is RadioButton rb && rb.Tag is string provider && DataContext is MainViewModel vm)
         {
             vm.AI.SelectedProvider = provider;
+        }
+    }
+
+    private void CopyAiResponseButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+
+        // If the user highlighted a specific section of the AI response (or thought process), copy only that selection!
+        if (AiResponseTextBox != null && !string.IsNullOrEmpty(AiResponseTextBox.SelectedText))
+        {
+            try
+            {
+                Clipboard.SetText(AiResponseTextBox.SelectedText);
+                vm.TriggerPeek("Copied Selection", $"{AiResponseTextBox.SelectedText.Length} chars copied to clipboard");
+                return;
+            }
+            catch { }
+        }
+
+        if (AiThinkingTextBox != null && !string.IsNullOrEmpty(AiThinkingTextBox.SelectedText))
+        {
+            try
+            {
+                Clipboard.SetText(AiThinkingTextBox.SelectedText);
+                vm.TriggerPeek("Copied Selection", $"{AiThinkingTextBox.SelectedText.Length} chars copied to clipboard");
+                return;
+            }
+            catch { }
+        }
+
+        if (vm.AI.CopyResponseCommand.CanExecute(null))
+        {
+            vm.AI.CopyResponseCommand.Execute(null);
+            vm.TriggerPeek("Copied Full Reply", "Entire AI response copied to clipboard");
+        }
+    }
+
+    private void CopySelectedAiText_Click(object sender, RoutedEventArgs e)
+    {
+        if (AiResponseTextBox != null && !string.IsNullOrEmpty(AiResponseTextBox.SelectedText))
+        {
+            try
+            {
+                Clipboard.SetText(AiResponseTextBox.SelectedText);
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.TriggerPeek("Copied Selection", $"{AiResponseTextBox.SelectedText.Length} chars copied to clipboard");
+                }
+            }
+            catch { }
+        }
+        else
+        {
+            CopyFullAiResponse_Click(sender, e);
+        }
+    }
+
+    private void SelectAllAiText_Click(object sender, RoutedEventArgs e)
+    {
+        AiResponseTextBox?.Focus();
+        AiResponseTextBox?.SelectAll();
+    }
+
+    private void CopyFullAiResponse_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && vm.AI.CopyResponseCommand.CanExecute(null))
+        {
+            vm.AI.CopyResponseCommand.Execute(null);
+            vm.TriggerPeek("Copied Full Reply", "Entire AI response copied to clipboard");
         }
     }
 
