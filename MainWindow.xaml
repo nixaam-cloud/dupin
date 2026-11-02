@@ -53,6 +53,10 @@
                 <!-- ==================== COLLAPSED PILL VIEW ==================== -->
                 <Grid x:Name="CollapsedContent"
                       Opacity="1"
+                      Background="Transparent"
+                      Cursor="Hand"
+                      ToolTip="Click to minimize to tiny pill • When minimized, click to return to normal"
+                      MouseLeftButtonDown="CollapsedPill_MouseDown"
                       VerticalAlignment="Center"
                       HorizontalAlignment="Stretch"
                       Margin="10,0,10,0">
@@ -2621,8 +2625,9 @@
                     </Border>
                 </Grid>
 
-                <!-- Bottom Drag / Resize Handle -->
+                <!-- Bottom Drag / Resize Handle (Visible only when expanded) -->
                 <Border x:Name="BottomResizeHandle"
+                        Visibility="Collapsed"
                         VerticalAlignment="Bottom"
                         HorizontalAlignment="Stretch"
                         Height="14"
@@ -2657,6 +2662,7 @@
 
                 <!-- Left Edge Horizontal Resize Handle -->
                 <Border x:Name="LeftResizeHandle"
+                        Visibility="Collapsed"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Stretch"
                         Width="10"
@@ -2671,6 +2677,7 @@
 
                 <!-- Right Edge Horizontal Resize Handle -->
                 <Border x:Name="RightResizeHandle"
+                        Visibility="Collapsed"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Stretch"
                         Width="10"
@@ -2685,6 +2692,7 @@
 
                 <!-- Bottom-Left Diagonal Corner Resize Handle -->
                 <Border x:Name="BottomLeftResizeHandle"
+                        Visibility="Collapsed"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Bottom"
                         Width="18"
@@ -2699,6 +2707,7 @@
 
                 <!-- Bottom-Right Diagonal Corner Resize Handle -->
                 <Border x:Name="BottomRightResizeHandle"
+                        Visibility="Collapsed"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
                         Width="18"

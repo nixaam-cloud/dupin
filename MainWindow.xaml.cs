@@ -18,8 +18,8 @@ public partial class MainWindow : Window
     private const int HOTKEY_ID = 9001;
 
     // Animation dimensions
-    private const double MINIMAL_WIDTH = 64;
-    private const double MINIMAL_HEIGHT = 18;
+    private const double MINIMAL_WIDTH = 68;
+    private const double MINIMAL_HEIGHT = 20;
     private const double COLLAPSED_WIDTH = 180;
     private const double COLLAPSED_HEIGHT = 32;
     private const double HUD_WIDTH = 228;
@@ -54,6 +54,7 @@ public partial class MainWindow : Window
     private bool _isMinimal = false;
     private bool _isForceHidden = false;
     private bool _suppressHoverExpandUntilLeave = false;
+    private bool _userPinnedMinimal = false;
 
     public MainWindow()
     {
@@ -392,7 +393,14 @@ public partial class MainWindow : Window
         }
         else if (_isExpanded)
         {
-            AnimateCollapse();
+            _userPinnedMinimal = false;
+            AnimateCollapse(toMinimal: false);
+        }
+        else if (_isMinimal)
+        {
+            _userPinnedMinimal = false;
+            _suppressHoverExpandUntilLeave = false;
+            AnimateToCollapsed();
         }
         else
         {
@@ -400,9 +408,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SetResizeHandlesVisibility(bool visible)
+    {
+        var vis = visible ? Visibility.Visible : Visibility.Collapsed;
+        if (BottomResizeHandle != null) BottomResizeHandle.Visibility = vis;
+        if (LeftResizeHandle != null) LeftResizeHandle.Visibility = vis;
+        if (RightResizeHandle != null) RightResizeHandle.Visibility = vis;
+        if (BottomLeftResizeHandle != null) BottomLeftResizeHandle.Visibility = vis;
+        if (BottomRightResizeHandle != null) BottomRightResizeHandle.Visibility = vis;
+    }
+
     private void NotchContainer_MouseEnter(object sender, MouseEventArgs e)
     {
-        if (_isResizingBottom || _suppressHoverExpandUntilLeave) return;
+        if (_isResizingBottom || _suppressHoverExpandUntilLeave || _userPinnedMinimal) return;
 
         // Browser Tab-Drag Immunity: If the user is dragging a browser tab or window near the top of the screen
         // (left mouse button already pressed when entering the notch), do NOT expand the notch.
@@ -424,7 +442,7 @@ public partial class MainWindow : Window
     private void OnHoverExpandTimerTick(object? sender, EventArgs e)
     {
         _hoverExpandTimer.Stop();
-        if (_isResizingBottom || _suppressHoverExpandUntilLeave) return;
+        if (_isResizingBottom || _suppressHoverExpandUntilLeave || _userPinnedMinimal) return;
         if (ScreenHelper.IsLeftMouseButtonDown()) return;
 
         if (!_isExpanded && NotchContainer.IsMouseOver)
@@ -678,35 +696,37 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void CollapsedPill_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        ToggleMinimalOrNormalFromClick(e);
+    }
+
     private void MascotEyes_MouseDown(object sender, MouseButtonEventArgs e)
     {
-        _hoverExpandTimer.Stop();
-        if (!_isExpanded)
-        {
-            if (_isMinimal)
-            {
-                AnimateToCollapsed();
-            }
-            else
-            {
-                _suppressHoverExpandUntilLeave = true;
-                AnimateToMinimal();
-            }
-            e.Handled = true;
-        }
+        ToggleMinimalOrNormalFromClick(e);
     }
 
     private void MediaPill_MouseDown(object sender, MouseButtonEventArgs e)
     {
+        ToggleMinimalOrNormalFromClick(e);
+    }
+
+    private void ToggleMinimalOrNormalFromClick(MouseButtonEventArgs e)
+    {
         _hoverExpandTimer.Stop();
         if (!_isExpanded)
         {
             if (_isMinimal)
             {
+                // Return from minimized tiny pill back to normal 180x32 pill!
+                _userPinnedMinimal = false;
+                _suppressHoverExpandUntilLeave = true;
                 AnimateToCollapsed();
             }
             else
             {
+                // Shrink from normal 180x32 pill to tiny 68x20 minimal pill!
+                _userPinnedMinimal = true;
                 _suppressHoverExpandUntilLeave = true;
                 AnimateToMinimal();
             }
@@ -719,7 +739,10 @@ public partial class MainWindow : Window
         _hoverExpandTimer.Stop();
         _isExpanded = true;
         _isMinimal = false;
+        _userPinnedMinimal = false;
         _inactivityTimer.Stop();
+
+        SetResizeHandlesVisibility(true);
 
         if (DataContext is MainViewModel vm)
         {
@@ -784,6 +807,8 @@ public partial class MainWindow : Window
         _hoverExpandTimer.Stop();
         _isExpanded = false;
         _isMinimal = toMinimal;
+
+        SetResizeHandlesVisibility(false);
 
         double targetWidth = toMinimal ? MINIMAL_WIDTH : COLLAPSED_WIDTH;
         double targetHeight = toMinimal ? MINIMAL_HEIGHT : COLLAPSED_HEIGHT;
@@ -875,14 +900,16 @@ public partial class MainWindow : Window
 
     private void MinimizeToTinyPillButton_Click(object sender, RoutedEventArgs e)
     {
+        _userPinnedMinimal = true;
         _suppressHoverExpandUntilLeave = true;
         AnimateCollapse(toMinimal: true);
     }
 
     private void CollapseButton_Click(object sender, RoutedEventArgs e)
     {
+        _userPinnedMinimal = false;
         _suppressHoverExpandUntilLeave = true;
-        AnimateCollapse(toMinimal: true);
+        AnimateCollapse(toMinimal: false);
     }
 
     private void NotchContainer_PreviewDragOver(object sender, DragEventArgs e)
