@@ -13,7 +13,7 @@
         Topmost="True"
         ShowInTaskbar="False"
         ResizeMode="NoResize"
-        Width="670"
+        Width="1120"
         Height="64"
         WindowStartupLocation="Manual">
 
@@ -577,9 +577,19 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- Module Selector Tabs -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <!-- Media Tab -->
+                        <!-- Module Selector Tabs (Scrollable & Drag-Pannable Horizontally) -->
+                        <ScrollViewer x:Name="TopTabsScrollViewer"
+                                      Grid.Column="0"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Disabled"
+                                      Margin="0,0,6,0"
+                                      VerticalAlignment="Center"
+                                      PreviewMouseWheel="TopTabsScrollViewer_PreviewMouseWheel"
+                                      PreviewMouseLeftButtonDown="TopTabsScrollViewer_PreviewMouseLeftButtonDown"
+                                      PreviewMouseMove="TopTabsScrollViewer_PreviewMouseMove"
+                                      PreviewMouseLeftButtonUp="TopTabsScrollViewer_PreviewMouseLeftButtonUp">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Media Tab -->
                             <RadioButton Style="{StaticResource NotchTabButtonStyle}"
                                          IsChecked="True"
                                          Click="TabButton_Click"
@@ -731,7 +741,8 @@
                                     </Border>
                                 </StackPanel>
                             </RadioButton>
-                        </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
 
                         <!-- Right: Battery & Quick Collapse Button -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -2615,9 +2626,10 @@
                         VerticalAlignment="Bottom"
                         HorizontalAlignment="Stretch"
                         Height="14"
+                        Margin="18,0,18,0"
                         Background="Transparent"
                         Cursor="SizeNS"
-                        ToolTip="Drag down to expand height • Double-click to reset (224px)"
+                        ToolTip="Drag down to expand height • Double-click to reset size"
                         PreviewMouseLeftButtonDown="BottomResizeHandle_PreviewMouseLeftButtonDown"
                         MouseMove="BottomResizeHandle_MouseMove"
                         PreviewMouseLeftButtonUp="BottomResizeHandle_PreviewMouseLeftButtonUp">
@@ -2642,6 +2654,62 @@
                         </Border.Style>
                     </Border>
                 </Border>
+
+                <!-- Left Edge Horizontal Resize Handle -->
+                <Border x:Name="LeftResizeHandle"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Stretch"
+                        Width="10"
+                        Margin="0,28,0,16"
+                        Background="Transparent"
+                        Cursor="SizeWE"
+                        ToolTip="Drag left/right to resize width • Double-click to reset size"
+                        PreviewMouseLeftButtonDown="SideResizeHandle_PreviewMouseLeftButtonDown"
+                        MouseMove="SideResizeHandle_MouseMove"
+                        PreviewMouseLeftButtonUp="SideResizeHandle_PreviewMouseLeftButtonUp"
+                        Tag="Left" />
+
+                <!-- Right Edge Horizontal Resize Handle -->
+                <Border x:Name="RightResizeHandle"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Stretch"
+                        Width="10"
+                        Margin="0,28,0,16"
+                        Background="Transparent"
+                        Cursor="SizeWE"
+                        ToolTip="Drag left/right to resize width • Double-click to reset size"
+                        PreviewMouseLeftButtonDown="SideResizeHandle_PreviewMouseLeftButtonDown"
+                        MouseMove="SideResizeHandle_MouseMove"
+                        PreviewMouseLeftButtonUp="SideResizeHandle_PreviewMouseLeftButtonUp"
+                        Tag="Right" />
+
+                <!-- Bottom-Left Diagonal Corner Resize Handle -->
+                <Border x:Name="BottomLeftResizeHandle"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Width="18"
+                        Height="18"
+                        Background="Transparent"
+                        Cursor="SizeNESW"
+                        ToolTip="Drag corner to resize width &amp; height • Double-click to reset size"
+                        PreviewMouseLeftButtonDown="SideResizeHandle_PreviewMouseLeftButtonDown"
+                        MouseMove="SideResizeHandle_MouseMove"
+                        PreviewMouseLeftButtonUp="SideResizeHandle_PreviewMouseLeftButtonUp"
+                        Tag="BottomLeft" />
+
+                <!-- Bottom-Right Diagonal Corner Resize Handle -->
+                <Border x:Name="BottomRightResizeHandle"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Width="18"
+                        Height="18"
+                        Background="Transparent"
+                        Cursor="SizeNWSE"
+                        ToolTip="Drag corner to resize width &amp; height • Double-click to reset size"
+                        PreviewMouseLeftButtonDown="SideResizeHandle_PreviewMouseLeftButtonDown"
+                        MouseMove="SideResizeHandle_MouseMove"
+                        PreviewMouseLeftButtonUp="SideResizeHandle_PreviewMouseLeftButtonUp"
+                        Tag="BottomRight" />
             </Grid>
         </Border>
     </Grid>

@@ -48,7 +48,7 @@
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="GroupName" Value="NotchTabs" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Padding" Value="6,3" />
+        <Setter Property="Padding" Value="5,3" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
