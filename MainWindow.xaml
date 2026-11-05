@@ -94,13 +94,13 @@
 
                         <!-- Left: Alert Reactive Mascot Face -->
                         <Border Grid.Column="0" Width="26" Height="22" CornerRadius="11"
-                                Background="#22163B" BorderBrush="#A78BFA" BorderThickness="1.5"
+                                Background="#2C1A12" BorderBrush="#F97316" BorderThickness="1.5"
                                 VerticalAlignment="Center" Margin="0,0,7,0">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <!-- Notif Mascot Left Eye -->
                                 <Border Width="4" Height="7" CornerRadius="2" Background="#FFFFFF" Margin="0,0,3,0">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#C4B5FD" BlurRadius="5" ShadowDepth="0" Opacity="0.95" />
+                                        <DropShadowEffect Color="#FDBA74" BlurRadius="5" ShadowDepth="0" Opacity="0.95" />
                                     </Border.Effect>
                                     <Border.RenderTransform>
                                         <ScaleTransform x:Name="NotifLeftEyeScale" CenterY="3.5" />
@@ -124,7 +124,7 @@
                                 <!-- Notif Mascot Right Eye -->
                                 <Border Width="4" Height="7" CornerRadius="2" Background="#FFFFFF">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#C4B5FD" BlurRadius="5" ShadowDepth="0" Opacity="0.95" />
+                                        <DropShadowEffect Color="#FDBA74" BlurRadius="5" ShadowDepth="0" Opacity="0.95" />
                                     </Border.Effect>
                                     <Border.RenderTransform>
                                         <ScaleTransform x:Name="NotifRightEyeScale" CenterY="3.5" />
@@ -150,9 +150,9 @@
                         <!-- Center: App Name + Title & Message Preview -->
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Background="#3B2667" CornerRadius="4" Padding="4,1" Margin="0,0,5,0" VerticalAlignment="Center">
+                                <Border Background="#3A1F12" CornerRadius="4" Padding="4,1" Margin="0,0,5,0" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding ActiveNotification.AppName}"
-                                               FontSize="8.5" FontWeight="Bold" Foreground="#DDD6FE" VerticalAlignment="Center" />
+                                               FontSize="8.5" FontWeight="Bold" Foreground="#FDBA74" VerticalAlignment="Center" />
                                 </Border>
                                 <TextBlock Text="{Binding ActiveNotification.Title}"
                                            FontSize="9.5" FontWeight="SemiBold" Foreground="#FFFFFF"
@@ -208,11 +208,11 @@
 
                         <!-- Dynamic Hardware Icon -->
                         <Border Grid.Column="0" Width="22" Height="22" CornerRadius="11"
-                                Background="#211A3A" BorderBrush="#8B5CF6" BorderThickness="1.2"
+                                Background="#142E24" BorderBrush="#10B981" BorderThickness="1.2"
                                 VerticalAlignment="Center" Margin="0,0,7,0">
                             <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Path Data="{StaticResource IconVolume}"
-                                      Fill="#A78BFA" Width="11" Height="11" Stretch="Uniform"
+                                      Fill="#34D399" Width="11" Height="11" Stretch="Uniform"
                                       Visibility="{Binding IsHudVolume, Converter={StaticResource BoolToVisConv}}" />
                                 <Path Data="{StaticResource IconVolumeMute}"
                                       Fill="#F87171" Width="11" Height="11" Stretch="Uniform"
@@ -243,8 +243,8 @@
                                     Height="5" CornerRadius="2.5">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#8B5CF6" Offset="0" />
-                                        <GradientStop Color="#38BDF8" Offset="1" />
+                                        <GradientStop Color="#10B981" Offset="0" />
+                                        <GradientStop Color="#F97316" Offset="1" />
                                     </LinearGradientBrush>
                                 </Border.Background>
                             </Border>
@@ -252,7 +252,7 @@
 
                         <!-- HUD Value / Percentage -->
                         <TextBlock Grid.Column="3" Text="{Binding HudValueText}"
-                                   FontSize="9.5" FontWeight="Bold" Foreground="#DDD6FE"
+                                   FontSize="9.5" FontWeight="Bold" Foreground="#FDBA74"
                                    VerticalAlignment="Center" Margin="8,0,0,0" />
                     </Grid>
 
@@ -759,7 +759,7 @@
                                           Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
                                           Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
                                     <TextBlock Text="Alerts" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
-                                    <Border Margin="4,0,0,0" Background="#8B5CF6" CornerRadius="6" Padding="4,0"
+                                    <Border Margin="4,0,0,0" Background="#EA580C" CornerRadius="6" Padding="4,0"
                                             VerticalAlignment="Center"
                                             Visibility="{Binding NotificationCount, Converter={StaticResource GreaterThanZeroToVisConv}}">
                                         <TextBlock Text="{Binding NotificationCount}" FontSize="8.5" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
@@ -1853,7 +1853,7 @@
                                                                             CommandParameter="{Binding}"
                                                                             ToolTip="Send to AI Vision / Analysis">
                                                                         <Path Data="{StaticResource IconSparkle}"
-                                                                              Fill="#A78BFA"
+                                                                              Fill="#FB923C"
                                                                               Width="8.5" Height="8.5" Stretch="Uniform" />
                                                                     </Button>
                                                                     <Button Style="{StaticResource NotchIconButtonStyle}"
@@ -2048,8 +2048,8 @@
                                         </ScrollViewer.Style>
                                         <StackPanel>
                                             <!-- Attached Vision / Screen Snip Preview Card -->
-                                            <Border Background="#181528"
-                                                    BorderBrush="#6D28D9"
+                                            <Border Background="#12241D"
+                                                    BorderBrush="#10B981"
                                                     BorderThickness="1"
                                                     CornerRadius="8"
                                                     Padding="6,4"
@@ -2062,11 +2062,11 @@
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <Border Grid.Column="0" Width="36" Height="24" CornerRadius="4" ClipToBounds="True"
-                                                            Background="#12121A" BorderBrush="#4C1D95" BorderThickness="1" Margin="0,0,8,0">
+                                                            Background="#12121A" BorderBrush="#059669" BorderThickness="1" Margin="0,0,8,0">
                                                         <Image Source="{Binding AI.AttachedImagePreview}" Stretch="UniformToFill" />
                                                     </Border>
                                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                        <TextBlock Text="📸 Vision Image Attached" FontSize="9" FontWeight="Bold" Foreground="#C4B5FD" />
+                                                        <TextBlock Text="📸 Vision Image Attached" FontSize="9" FontWeight="Bold" Foreground="#34D399" />
                                                         <TextBlock Text="{Binding AI.AttachedImageLabel}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" />
                                                     </StackPanel>
                                                     <Button Grid.Column="2" Style="{StaticResource NotchIconButtonStyle}"
@@ -2079,8 +2079,8 @@
                                             </Border>
 
                                             <!-- Live Thinking / Streaming Indicator Banner -->
-                                            <Border Background="#1B172C"
-                                                    BorderBrush="#4C1D95"
+                                            <Border Background="#261912"
+                                                    BorderBrush="#9A3412"
                                                     BorderThickness="1"
                                                     CornerRadius="8"
                                                     Padding="8,4"
@@ -2090,7 +2090,7 @@
                                                     <Grid>
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                             <!-- Animated Pulsing Dots -->
-                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#A78BFA" Margin="0,0,4,0" VerticalAlignment="Center">
+                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#10B981" Margin="0,0,4,0" VerticalAlignment="Center">
                                                                 <Border.Triggers>
                                                                     <EventTrigger RoutedEvent="Loaded">
                                                                         <BeginStoryboard>
@@ -2101,7 +2101,7 @@
                                                                     </EventTrigger>
                                                                 </Border.Triggers>
                                                             </Border>
-                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#C4B5FD" Margin="0,0,4,0" VerticalAlignment="Center">
+                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#F97316" Margin="0,0,4,0" VerticalAlignment="Center">
                                                                 <Border.Triggers>
                                                                     <EventTrigger RoutedEvent="Loaded">
                                                                         <BeginStoryboard>
@@ -2112,7 +2112,7 @@
                                                                     </EventTrigger>
                                                                 </Border.Triggers>
                                                             </Border>
-                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#DDD6FE" Margin="0,0,7,0" VerticalAlignment="Center">
+                                                            <Border Width="6" Height="6" CornerRadius="3" Background="#FDBA74" Margin="0,0,7,0" VerticalAlignment="Center">
                                                                 <Border.Triggers>
                                                                     <EventTrigger RoutedEvent="Loaded">
                                                                         <BeginStoryboard>
@@ -2127,7 +2127,7 @@
                                                             <TextBlock Text="{Binding AI.StatusText}"
                                                                        FontSize="10"
                                                                        FontWeight="SemiBold"
-                                                                       Foreground="#DDD6FE"
+                                                                       Foreground="#FDBA74"
                                                                        VerticalAlignment="Center" />
                                                         </StackPanel>
 
@@ -2144,15 +2144,15 @@
                                                     <ProgressBar IsIndeterminate="True"
                                                                  Height="2"
                                                                  Margin="0,4,0,0"
-                                                                 Foreground="#A78BFA"
-                                                                 Background="#2A2440"
+                                                                 Foreground="#F97316"
+                                                                 Background="#3B2316"
                                                                  BorderThickness="0" />
                                                 </StackPanel>
                                             </Border>
 
                                             <!-- Live Thought Process Card (when model streams thoughts) -->
-                                            <Border Background="#151520"
-                                                    BorderBrush="#2E2A45"
+                                            <Border Background="#141C18"
+                                                    BorderBrush="#10B981"
                                                     BorderThickness="2,0,0,0"
                                                     Padding="7,3"
                                                     Margin="0,0,0,5"
@@ -2161,7 +2161,7 @@
                                                     <TextBlock Text="💭 Thought Process"
                                                                FontSize="9"
                                                                FontWeight="SemiBold"
-                                                               Foreground="#A78BFA"
+                                                               Foreground="#34D399"
                                                                Margin="0,0,0,1" />
                                                     <TextBox x:Name="AiThinkingTextBox"
                                                              Text="{Binding AI.ThinkingText, Mode=OneWay}"
@@ -2175,7 +2175,7 @@
                                                              Padding="0"
                                                              TextWrapping="Wrap"
                                                              AcceptsReturn="True"
-                                                             SelectionBrush="#8B5CF6"
+                                                             SelectionBrush="#10B981"
                                                              SelectionOpacity="0.45"
                                                              MaxHeight="48"
                                                              VerticalScrollBarVisibility="Auto" />
@@ -2194,7 +2194,7 @@
                                                      Padding="0"
                                                      TextWrapping="Wrap"
                                                      AcceptsReturn="True"
-                                                     SelectionBrush="#8B5CF6"
+                                                     SelectionBrush="#10B981"
                                                      SelectionOpacity="0.45"
                                                      Cursor="IBeam">
                                                 <TextBox.ContextMenu>
@@ -2299,9 +2299,9 @@
                                             </Border.Style>
                                         </Border>
                                         <TextBlock Text="AI Coding Telemetry" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                        <Border Background="#1D1936" BorderBrush="#6D28D9" BorderThickness="1" CornerRadius="7" Padding="6,1" Margin="0,0,6,0" VerticalAlignment="Center">
+                                        <Border Background="#142E24" BorderBrush="#10B981" BorderThickness="1" CornerRadius="7" Padding="6,1" Margin="0,0,6,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="Today: " FontSize="9" Foreground="#C4B5FD" />
+                                                <TextBlock Text="Today: " FontSize="9" Foreground="#6EE7B7" />
                                                 <TextBlock Text="{Binding Usage.TodayTotalText}" FontSize="9.5" FontWeight="Bold" Foreground="#FFFFFF" />
                                             </StackPanel>
                                         </Border>
@@ -2313,7 +2313,7 @@
                                         <CheckBox Content="Workflow Alerts"
                                                   IsChecked="{Binding Usage.NotifyOnComplete}"
                                                   Click="UsageSetting_Click"
-                                                  Foreground="#DDD6FE"
+                                                  Foreground="#FDBA74"
                                                   FontSize="9.5"
                                                   VerticalAlignment="Center"
                                                   Margin="0,0,8,0"
@@ -2466,7 +2466,7 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <Path Data="{StaticResource IconTerminal}" Fill="#A78BFA" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                                    <Path Data="{StaticResource IconTerminal}" Fill="#FB923C" Width="10" Height="10" Stretch="Uniform" Margin="0,0,5,0" VerticalAlignment="Center" />
                                                     <TextBlock Text="Workflow Feed" FontSize="10" FontWeight="SemiBold" Foreground="#ECEFF7" VerticalAlignment="Center" />
                                                 </StackPanel>
                                                 <Button Grid.Column="1"
@@ -2506,7 +2506,7 @@
                                                                                 <ColumnDefinition Width="*" />
                                                                                 <ColumnDefinition Width="Auto" />
                                                                             </Grid.ColumnDefinitions>
-                                                                            <TextBlock Grid.Column="0" Text="{Binding ToolName}" FontSize="8.5" FontWeight="Bold" Foreground="#C4B5FD" />
+                                                                            <TextBlock Grid.Column="0" Text="{Binding ToolName}" FontSize="8.5" FontWeight="Bold" Foreground="#FB923C" />
                                                                             <TextBlock Grid.Column="1" Text="{Binding Project}" FontSize="8" Foreground="#94A3B8" Margin="5,0,4,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                                                             <TextBlock Grid.Column="2" Text="{Binding TimeText}" FontSize="8" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                                                                         </Grid>
@@ -2603,8 +2603,8 @@
 
                                                             <!-- Row 0: App Name Tag & Time -->
                                                             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                                                <Border Background="#2E1C4E" BorderBrush="#5B21B6" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
-                                                                    <TextBlock Text="{Binding AppName}" FontSize="9" FontWeight="Bold" Foreground="#DDD6FE" />
+                                                                <Border Background="#2C1A12" BorderBrush="#9A3412" BorderThickness="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0">
+                                                                    <TextBlock Text="{Binding AppName}" FontSize="9" FontWeight="Bold" Foreground="#FDBA74" />
                                                                 </Border>
                                                                 <TextBlock Text="{Binding TimeText}" FontSize="9" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
                                                             </StackPanel>
@@ -2672,7 +2672,7 @@
                             <Style TargetType="Border">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border, AncestorLevel=1}}" Value="True">
-                                        <Setter Property="Background" Value="#A78BFA" />
+                                        <Setter Property="Background" Value="#10B981" />
                                         <Setter Property="Opacity" Value="1.0" />
                                     </DataTrigger>
                                 </Style.Triggers>

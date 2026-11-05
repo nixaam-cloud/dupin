@@ -11,7 +11,7 @@ public partial class AiToolUsage : ObservableObject
     public string Key { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
     public string Name => DisplayName;
-    public string AccentHex { get; init; } = "#A78BFA";
+    public string AccentHex { get; init; } = "#10B981";
     public string AccentBrush => AccentHex;
     public string DataPath { get; init; } = string.Empty;
 
@@ -114,7 +114,7 @@ public class AiWorkflowEvent
     public string Title { get; init; } = string.Empty;
     public string Message { get; init; } = string.Empty;
     public string Project { get; init; } = string.Empty;
-    public string AccentHex { get; init; } = "#A78BFA";
+    public string AccentHex { get; init; } = "#10B981";
     public DateTime Timestamp { get; init; } = DateTime.Now;
     public string TimeText => Timestamp.ToString("HH:mm");
 }

@@ -73,9 +73,9 @@
         </Setter>
     </Style>
 
-    <!-- Primary Action Button Style -->
+    <!-- Primary Action Button Style (Warm Orange Accent) -->
     <Style x:Key="NotchPrimaryButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Background" Value="{StaticResource AccentOrangeBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="#FFFFFF" />
         <Setter Property="Cursor" Value="Hand" />
@@ -94,7 +94,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource AccentLightBrush}" />
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource AccentOrangeLightBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

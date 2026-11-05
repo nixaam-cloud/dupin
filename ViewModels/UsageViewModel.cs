@@ -100,7 +100,7 @@ public partial class UsageViewModel : ObservableObject
             Title = e.Title,
             Message = e.Message,
             Project = e.Project,
-            AccentHex = tool?.AccentHex ?? "#A78BFA",
+            AccentHex = tool?.AccentHex ?? "#10B981",
             Timestamp = DateTime.Now
         };
 

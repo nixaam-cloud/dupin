@@ -652,10 +652,10 @@ public partial class MainWindow : Window
             LeftEyeScale.BeginAnimation(ScaleTransform.ScaleXProperty, surpriseAnimX);
             RightEyeScale.BeginAnimation(ScaleTransform.ScaleXProperty, surpriseAnimX);
 
-            // Glow shifts to radiant alert purple with a pulse
+            // Glow shifts to radiant alert orange with a pulse
             if (LeftEyeGlow != null && RightEyeGlow != null)
             {
-                var glowColor = (Color)ColorConverter.ConvertFromString("#C084FC");
+                var glowColor = (Color)ColorConverter.ConvertFromString("#F97316");
                 var baseColor = (Color)ColorConverter.ConvertFromString("#78BEFF");
 
                 var glowColorAnim = new ColorAnimation

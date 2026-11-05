@@ -23,14 +23,14 @@
                 VerticalAlignment="Top"
                 Margin="0,48,0,0"
                 Background="#E612121A"
-                BorderBrush="#8B5CF6"
+                BorderBrush="#10B981"
                 BorderThickness="1.5"
                 CornerRadius="16"
                 Padding="16,8"
                 IsHitTestVisible="False">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Path Data="{StaticResource IconSnip}"
-                      Fill="#A78BFA"
+                      Fill="#FB923C"
                       Width="14" Height="14"
                       Stretch="Uniform"
                       Margin="0,0,8,0"
@@ -48,12 +48,12 @@
             <!-- Marquee Selection Rectangle -->
             <Border x:Name="SelectionBorder"
                     Visibility="Collapsed"
-                    Background="#18A78BFA"
-                    BorderBrush="#A78BFA"
+                    Background="#1810B981"
+                    BorderBrush="#10B981"
                     BorderThickness="2"
                     CornerRadius="4">
                 <Border.Effect>
-                    <DropShadowEffect Color="#8B5CF6" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
+                    <DropShadowEffect Color="#10B981" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
                 </Border.Effect>
             </Border>
 
@@ -61,13 +61,13 @@
             <Border x:Name="SizeBadge"
                     Visibility="Collapsed"
                     Background="#E6161622"
-                    BorderBrush="#7C3AED"
+                    BorderBrush="#F97316"
                     BorderThickness="1"
                     CornerRadius="6"
                     Padding="6,2">
                 <TextBlock x:Name="SizeText"
                            Text="0 × 0"
-                           Foreground="#EDE9FE"
+                           Foreground="#FDBA74"
                            FontSize="10.5"
                            FontWeight="SemiBold" />
             </Border>
