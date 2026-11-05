@@ -15,11 +15,14 @@ public partial class WeatherViewModel : ObservableObject
     private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(8) };
     private readonly string _weatherPath;
     private readonly DispatcherTimer _refreshTimer;
+    private readonly DispatcherTimer _dayNightTimer;
 
     private double _latitude = 4.1755;
     private double _longitude = 73.5093;
     private bool _hasCustomLocation = false;
     private string _liveWeatherEffect = "Sun";
+    private int _lastWmoCode = 0;
+    private bool? _apiIsDay = null;
 
     [ObservableProperty]
     private string _cityName = "Locating...";
@@ -48,16 +51,55 @@ public partial class WeatherViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ActiveVisualEffect))]
     [NotifyPropertyChangedFor(nameof(IsSunEffect))]
+    [NotifyPropertyChangedFor(nameof(IsMoonEffect))]
     [NotifyPropertyChangedFor(nameof(IsCloudEffect))]
     [NotifyPropertyChangedFor(nameof(IsRainEffect))]
+    [NotifyPropertyChangedFor(nameof(IsNightTime))]
+    [NotifyPropertyChangedFor(nameof(IsDayTime))]
     [NotifyPropertyChangedFor(nameof(IsAutoMode))]
     [NotifyPropertyChangedFor(nameof(WeatherEmoji))]
+    [NotifyPropertyChangedFor(nameof(ShortBadgeText))]
     [NotifyPropertyChangedFor(nameof(EffectStatusText))]
-    private string _effectMode = "Auto"; // "Auto", "Sun", "Cloud", "Rain"
+    private string _effectMode = "Auto"; // "Auto", "Sun", "Moon", "Cloud", "Rain"
 
-    public string ActiveVisualEffect => EffectMode == "Auto" ? _liveWeatherEffect : EffectMode;
+    public bool IsNightTime
+    {
+        get
+        {
+            if (string.Equals(EffectMode, "Moon", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (string.Equals(EffectMode, "Sun", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (_hasCustomLocation && _apiIsDay.HasValue)
+                return !_apiIsDay.Value;
+
+            int hour = DateTime.Now.Hour;
+            return hour < 6 || hour >= 18;
+        }
+    }
+
+    public bool IsDayTime => !IsNightTime;
+
+    public string ActiveVisualEffect
+    {
+        get
+        {
+            if (!string.Equals(EffectMode, "Auto", StringComparison.OrdinalIgnoreCase))
+                return EffectMode;
+
+            if (string.Equals(_liveWeatherEffect, "Sun", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(_liveWeatherEffect, "Moon", StringComparison.OrdinalIgnoreCase))
+            {
+                return IsNightTime ? "Moon" : "Sun";
+            }
+
+            return _liveWeatherEffect;
+        }
+    }
 
     public bool IsSunEffect => string.Equals(ActiveVisualEffect, "Sun", StringComparison.OrdinalIgnoreCase);
+    public bool IsMoonEffect => string.Equals(ActiveVisualEffect, "Moon", StringComparison.OrdinalIgnoreCase);
     public bool IsCloudEffect => string.Equals(ActiveVisualEffect, "Cloud", StringComparison.OrdinalIgnoreCase);
     public bool IsRainEffect => string.Equals(ActiveVisualEffect, "Rain", StringComparison.OrdinalIgnoreCase);
     public bool IsAutoMode => string.Equals(EffectMode, "Auto", StringComparison.OrdinalIgnoreCase);
@@ -69,13 +111,21 @@ public partial class WeatherViewModel : ObservableObject
     public string WeatherEmoji => ActiveVisualEffect switch
     {
         "Rain" => "🌧️",
-        "Cloud" => "☁️",
-        _ => "☀️"
+        "Moon" => "🌙",
+        "Cloud" => IsNightTime ? "🌙" : "☁️",
+        _ => IsNightTime ? "🌙" : "☀️"
     };
 
-    public string EffectStatusText => EffectMode == "Auto"
-        ? $"Eye Animation: Auto ({_liveWeatherEffect})"
-        : $"Eye Animation: {EffectMode} (Pinned)";
+    public string EffectStatusText
+    {
+        get
+        {
+            string timeLabel = IsNightTime ? "Night" : "Day";
+            return EffectMode == "Auto"
+                ? $"Eye Animation: Auto ({ActiveVisualEffect} · {timeLabel})"
+                : $"Eye Animation: {EffectMode} (Pinned)";
+        }
+    }
 
     public event Action? WeatherEffectChanged;
 
@@ -87,6 +137,7 @@ public partial class WeatherViewModel : ObservableObject
         _weatherPath = Path.Combine(dupinDir, "weather.json");
 
         LoadState();
+        UpdateTimeBasedCondition();
 
         _refreshTimer = new DispatcherTimer
         {
@@ -95,7 +146,24 @@ public partial class WeatherViewModel : ObservableObject
         _refreshTimer.Tick += async (s, e) => await RefreshWeatherAsync();
         _refreshTimer.Start();
 
+        _dayNightTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMinutes(1)
+        };
+        _dayNightTimer.Tick += (s, e) =>
+        {
+            UpdateTimeBasedCondition();
+            NotifyComputedProperties();
+            WeatherEffectChanged?.Invoke();
+        };
+        _dayNightTimer.Start();
+
         _ = RefreshWeatherAsync();
+    }
+
+    private void UpdateTimeBasedCondition()
+    {
+        (ConditionText, _liveWeatherEffect) = MapWmoCode(_lastWmoCode, IsNightTime);
     }
 
     private void LoadState()
@@ -118,6 +186,7 @@ public partial class WeatherViewModel : ObservableObject
                     LowC = dto.LowC;
                     Humidity = dto.Humidity;
                     WindKmh = dto.WindKmh;
+                    _lastWmoCode = dto.LastWmoCode;
                     if (!string.IsNullOrWhiteSpace(dto.ConditionText))
                         ConditionText = dto.ConditionText;
                     if (!string.IsNullOrWhiteSpace(dto.LiveWeatherEffect))
@@ -146,6 +215,7 @@ public partial class WeatherViewModel : ObservableObject
                 LowC = LowC,
                 Humidity = Humidity,
                 WindKmh = WindKmh,
+                LastWmoCode = _lastWmoCode,
                 ConditionText = ConditionText,
                 LiveWeatherEffect = _liveWeatherEffect,
                 EffectMode = EffectMode
@@ -161,6 +231,7 @@ public partial class WeatherViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(mode)) return;
         EffectMode = mode;
+        UpdateTimeBasedCondition();
         NotifyComputedProperties();
         SaveState();
         WeatherEffectChanged?.Invoke();
@@ -251,7 +322,7 @@ public partial class WeatherViewModel : ObservableObject
     {
         string latStr = _latitude.ToString(CultureInfo.InvariantCulture);
         string lonStr = _longitude.ToString(CultureInfo.InvariantCulture);
-        string url = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto";
+        string url = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}&current=temperature_2m,relative_humidity_2m,is_day,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto";
 
         string json = await _http.GetStringAsync(url);
         using var doc = JsonDocument.Parse(json);
@@ -264,10 +335,12 @@ public partial class WeatherViewModel : ObservableObject
                 Humidity = h.GetInt32();
             if (current.TryGetProperty("wind_speed_10m", out var w))
                 WindKmh = w.GetDouble();
+            if (current.TryGetProperty("is_day", out var isDayProp))
+                _apiIsDay = isDayProp.GetInt32() == 1;
             if (current.TryGetProperty("weather_code", out var wc))
             {
-                int code = wc.GetInt32();
-                (ConditionText, _liveWeatherEffect) = MapWmoCode(code);
+                _lastWmoCode = wc.GetInt32();
+                (ConditionText, _liveWeatherEffect) = MapWmoCode(_lastWmoCode, IsNightTime);
             }
         }
 
@@ -286,13 +359,13 @@ public partial class WeatherViewModel : ObservableObject
         WeatherEffectChanged?.Invoke();
     }
 
-    private static (string Condition, string Effect) MapWmoCode(int code)
+    private static (string Condition, string Effect) MapWmoCode(int code, bool isNight)
     {
         return code switch
         {
-            0 => ("Clear Sky", "Sun"),
-            1 => ("Mostly Clear", "Sun"),
-            2 => ("Partly Cloudy", "Cloud"),
+            0 => (isNight ? "Clear Night" : "Clear Sky", isNight ? "Moon" : "Sun"),
+            1 => (isNight ? "Mostly Clear Night" : "Mostly Clear", isNight ? "Moon" : "Sun"),
+            2 => (isNight ? "Partly Cloudy Night" : "Partly Cloudy", "Cloud"),
             3 => ("Overcast", "Cloud"),
             45 or 48 => ("Foggy", "Cloud"),
             51 or 53 or 55 => ("Light Drizzle", "Rain"),
@@ -303,17 +376,20 @@ public partial class WeatherViewModel : ObservableObject
             80 or 81 or 82 => ("Rain Showers", "Rain"),
             85 or 86 => ("Snow Showers", "Rain"),
             95 or 96 or 99 => ("Thunderstorm", "Rain"),
-            _ => ("Partly Cloudy", "Cloud")
+            _ => (isNight ? "Clear Night" : "Partly Cloudy", isNight ? "Moon" : "Cloud")
         };
     }
 
     private void NotifyComputedProperties()
     {
+        OnPropertyChanged(nameof(IsNightTime));
+        OnPropertyChanged(nameof(IsDayTime));
         OnPropertyChanged(nameof(TemperatureText));
         OnPropertyChanged(nameof(ShortBadgeText));
         OnPropertyChanged(nameof(DetailsText));
         OnPropertyChanged(nameof(ActiveVisualEffect));
         OnPropertyChanged(nameof(IsSunEffect));
+        OnPropertyChanged(nameof(IsMoonEffect));
         OnPropertyChanged(nameof(IsCloudEffect));
         OnPropertyChanged(nameof(IsRainEffect));
         OnPropertyChanged(nameof(IsAutoMode));
@@ -332,9 +408,9 @@ public partial class WeatherViewModel : ObservableObject
         public double LowC { get; set; } = 26;
         public int Humidity { get; set; } = 78;
         public double WindKmh { get; set; } = 14;
+        public int LastWmoCode { get; set; } = 0;
         public string ConditionText { get; set; } = "Clear Sky";
         public string LiveWeatherEffect { get; set; } = "Sun";
         public string EffectMode { get; set; } = "Auto";
     }
 }
-

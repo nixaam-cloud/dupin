@@ -320,8 +320,93 @@
                                     </Path>
                                 </Grid>
 
+                                <!-- 🌙 NIGHT MOON & STARS WEATHER EFFECT OVERLAY -->
+                                <Grid Visibility="{Binding Weather.IsMoonEffect, Converter={StaticResource BoolToVisConv}}" IsHitTestVisible="False">
+                                    <!-- Soft moonlight aura behind eyes -->
+                                    <Ellipse Width="34" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.28">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#38BDF8" Offset="0" />
+                                                <GradientStop Color="#0038BDF8" Offset="1" />
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+
+                                    <!-- Twinkling Star 1 (Left) -->
+                                    <Ellipse Width="2.5" Height="2.5" Fill="#FDE68A"
+                                             HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,2,0,0">
+                                        <Ellipse.Effect>
+                                            <DropShadowEffect Color="#FDE047" BlurRadius="4" ShadowDepth="0" Opacity="0.9" />
+                                        </Ellipse.Effect>
+                                        <Ellipse.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1.0" Duration="0:0:1.2" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Ellipse.Triggers>
+                                    </Ellipse>
+
+                                    <!-- Twinkling Star 2 (Top Center) -->
+                                    <Ellipse Width="2" Height="2" Fill="#BAE6FD"
+                                             HorizontalAlignment="Center" VerticalAlignment="Top" Margin="-4,1,0,0">
+                                        <Ellipse.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True" BeginTime="0:0:0.6">
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.15" To="0.95" Duration="0:0:1.5" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Ellipse.Triggers>
+                                    </Ellipse>
+
+                                    <!-- Gently Rocking Crescent Moon -->
+                                    <Path Data="{StaticResource IconNightLight}"
+                                          Fill="#FDE047"
+                                          Width="10" Height="10"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Margin="0,1,4,0"
+                                          RenderTransformOrigin="0.5,0.5">
+                                        <Path.Effect>
+                                            <DropShadowEffect Color="#F59E0B" BlurRadius="6" ShadowDepth="0" Opacity="0.95" />
+                                        </Path.Effect>
+                                        <Path.RenderTransform>
+                                            <RotateTransform x:Name="CollapsedMoonRock" Angle="-10" />
+                                        </Path.RenderTransform>
+                                        <Path.Triggers>
+                                            <EventTrigger RoutedEvent="Loaded">
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                        <DoubleAnimation Storyboard.TargetName="CollapsedMoonRock"
+                                                                         Storyboard.TargetProperty="Angle"
+                                                                         From="-12" To="12" Duration="0:0:2.8" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </EventTrigger>
+                                        </Path.Triggers>
+                                    </Path>
+                                </Grid>
+
                                 <!-- ☁️ CLOUD WEATHER EFFECT OVERLAY -->
                                 <Grid Visibility="{Binding Weather.IsCloudEffect, Converter={StaticResource BoolToVisConv}}" IsHitTestVisible="False">
+                                    <!-- Night Moon peeking behind clouds when cloudy at night -->
+                                    <Path Data="{StaticResource IconNightLight}"
+                                          Fill="#FDE047"
+                                          Width="8.5" Height="8.5"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Margin="0,0,3,0"
+                                          Visibility="{Binding Weather.IsNightTime, Converter={StaticResource BoolToVisConv}}">
+                                        <Path.Effect>
+                                            <DropShadowEffect Color="#F59E0B" BlurRadius="5" ShadowDepth="0" Opacity="0.85" />
+                                        </Path.Effect>
+                                    </Path>
                                     <!-- Back drifting cloud -->
                                     <Path Data="{StaticResource IconCloud}"
                                           Fill="#94A3B8"
@@ -681,7 +766,12 @@
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Path Data="{StaticResource IconSun}"
                                           Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
-                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"
+                                          Visibility="{Binding Weather.IsDayTime, Converter={StaticResource BoolToVisConv}}" />
+                                    <Path Data="{StaticResource IconNightLight}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="10" Height="10" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0"
+                                          Visibility="{Binding Weather.IsNightTime, Converter={StaticResource BoolToVisConv}}" />
                                     <TextBlock Text="Weather" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
                                 </StackPanel>
                             </RadioButton>
@@ -1379,7 +1469,11 @@
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,2">
                                         <Path Data="{StaticResource IconSun}"
-                                              Fill="#FBBF24" Width="13" Height="13" Stretch="Uniform" Margin="0,0,6,0" />
+                                              Fill="#FBBF24" Width="13" Height="13" Stretch="Uniform" Margin="0,0,6,0"
+                                              Visibility="{Binding Weather.IsDayTime, Converter={StaticResource BoolToVisConv}}" />
+                                        <Path Data="{StaticResource IconNightLight}"
+                                              Fill="#FDE047" Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0"
+                                              Visibility="{Binding Weather.IsNightTime, Converter={StaticResource BoolToVisConv}}" />
                                         <TextBlock Text="{Binding Weather.CityName}" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" />
                                         <Border Background="#232332" CornerRadius="6" Padding="6,1" Margin="6,0,0,0" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Weather.ConditionText}" FontSize="9" Foreground="#FDE68A" />
@@ -1498,8 +1592,77 @@
                                                 </Path>
                                             </Grid>
 
+                                            <!-- 🌙 Night Moon & Stars Preview Overlay -->
+                                            <Grid Visibility="{Binding Weather.IsMoonEffect, Converter={StaticResource BoolToVisConv}}">
+                                                <Ellipse Width="52" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.32">
+                                                    <Ellipse.Fill>
+                                                        <RadialGradientBrush>
+                                                            <GradientStop Color="#38BDF8" Offset="0" />
+                                                            <GradientStop Color="#0038BDF8" Offset="1" />
+                                                        </RadialGradientBrush>
+                                                    </Ellipse.Fill>
+                                                </Ellipse>
+                                                <!-- Twinkling Star 1 -->
+                                                <Ellipse Width="3" Height="3" Fill="#FDE68A"
+                                                         HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,4,0,0">
+                                                    <Ellipse.Effect>
+                                                        <DropShadowEffect Color="#FDE047" BlurRadius="5" ShadowDepth="0" Opacity="0.95" />
+                                                    </Ellipse.Effect>
+                                                    <Ellipse.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="1.0" Duration="0:0:1.2" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Ellipse.Triggers>
+                                                </Ellipse>
+                                                <!-- Twinkling Star 2 -->
+                                                <Ellipse Width="2.5" Height="2.5" Fill="#BAE6FD"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Top" Margin="-6,2,0,0">
+                                                    <Ellipse.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True" BeginTime="0:0:0.6">
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.15" To="0.95" Duration="0:0:1.5" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Ellipse.Triggers>
+                                                </Ellipse>
+                                                <!-- Gently Rocking Crescent Moon -->
+                                                <Path Data="{StaticResource IconNightLight}"
+                                                      Fill="#FDE047" Width="14" Height="14" Stretch="Uniform"
+                                                      HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,9,0"
+                                                      RenderTransformOrigin="0.5,0.5">
+                                                    <Path.Effect>
+                                                        <DropShadowEffect Color="#F59E0B" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
+                                                    </Path.Effect>
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform x:Name="PreviewMoonRock" Angle="-10" />
+                                                    </Path.RenderTransform>
+                                                    <Path.Triggers>
+                                                        <EventTrigger RoutedEvent="Loaded">
+                                                            <BeginStoryboard>
+                                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                    <DoubleAnimation Storyboard.TargetName="PreviewMoonRock" Storyboard.TargetProperty="Angle" From="-12" To="12" Duration="0:0:2.6" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger>
+                                                    </Path.Triggers>
+                                                </Path>
+                                            </Grid>
+
                                             <!-- ☁️ Cloud Preview Overlay -->
                                             <Grid Visibility="{Binding Weather.IsCloudEffect, Converter={StaticResource BoolToVisConv}}">
+                                                <Path Data="{StaticResource IconNightLight}" Fill="#FDE047" Width="11" Height="11" Stretch="Uniform"
+                                                      HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,7,0"
+                                                      Visibility="{Binding Weather.IsNightTime, Converter={StaticResource BoolToVisConv}}">
+                                                    <Path.Effect>
+                                                        <DropShadowEffect Color="#F59E0B" BlurRadius="6" ShadowDepth="0" Opacity="0.85" />
+                                                    </Path.Effect>
+                                                </Path>
                                                 <Path Data="{StaticResource IconCloud}" Fill="#94A3B8" Opacity="0.6" Width="18" Height="12" Stretch="Uniform"
                                                       HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,2,0,0">
                                                     <Path.RenderTransform>
@@ -1606,25 +1769,31 @@
                                     <StackPanel Orientation="Horizontal">
                                         <Button Content="Auto"
                                                 Style="{StaticResource NotchIconButtonStyle}"
-                                                Padding="7,2" FontSize="9.5" Margin="0,0,4,0"
+                                                Padding="6,2" FontSize="9.5" Margin="0,0,3,0"
                                                 Command="{Binding Weather.SetEffectModeCommand}"
                                                 CommandParameter="Auto"
-                                                ToolTip="Sync eye animation automatically with live weather" />
-                                        <Button Content="☀️ Sun"
+                                                ToolTip="Sync eye animation automatically with live weather &amp; day/night time" />
+                                        <Button Content="☀️ Day"
                                                 Style="{StaticResource NotchIconButtonStyle}"
-                                                Padding="7,2" FontSize="9.5" Margin="0,0,4,0"
+                                                Padding="6,2" FontSize="9.5" Margin="0,0,3,0"
                                                 Command="{Binding Weather.SetEffectModeCommand}"
                                                 CommandParameter="Sun"
-                                                ToolTip="Preview Sunny eye animation" />
+                                                ToolTip="Preview Sunny Day eye animation" />
+                                        <Button Content="🌙 Night"
+                                                Style="{StaticResource NotchIconButtonStyle}"
+                                                Padding="6,2" FontSize="9.5" Margin="0,0,3,0"
+                                                Command="{Binding Weather.SetEffectModeCommand}"
+                                                CommandParameter="Moon"
+                                                ToolTip="Preview Night Moon &amp; Stars eye animation" />
                                         <Button Content="☁️ Cloud"
                                                 Style="{StaticResource NotchIconButtonStyle}"
-                                                Padding="7,2" FontSize="9.5" Margin="0,0,4,0"
+                                                Padding="6,2" FontSize="9.5" Margin="0,0,3,0"
                                                 Command="{Binding Weather.SetEffectModeCommand}"
                                                 CommandParameter="Cloud"
                                                 ToolTip="Preview Cloudy eye animation" />
                                         <Button Content="🌧️ Rain"
                                                 Style="{StaticResource NotchIconButtonStyle}"
-                                                Padding="7,2" FontSize="9.5"
+                                                Padding="6,2" FontSize="9.5"
                                                 Command="{Binding Weather.SetEffectModeCommand}"
                                                 CommandParameter="Rain"
                                                 ToolTip="Preview Rainy eye animation" />

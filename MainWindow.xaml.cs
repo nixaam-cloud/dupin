@@ -229,6 +229,7 @@ public partial class MainWindow : Window
             string hex = effect switch
             {
                 "Sun" => "#FBBF24",
+                "Moon" => "#FDE047",
                 "Rain" => "#38BDF8",
                 "Cloud" => "#93C5FD",
                 _ => "#78BEFF"
