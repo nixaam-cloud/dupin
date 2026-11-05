@@ -18,5 +18,6 @@ public enum NotchTab
     Shelf,
     AI,
     Usage,
+    Tools,
     Notifications
 }

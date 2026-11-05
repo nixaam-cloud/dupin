@@ -234,7 +234,150 @@ public class HardwareHudService : IDisposable
 
     [DllImport("dxva2.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetMonitorBrightness(IntPtr hMonitor, uint dwNewBrightness);
+
+    [DllImport("dxva2.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool DestroyPhysicalMonitors(uint dwPhysicalMonitorArraySize, [In] PHYSICAL_MONITOR[] pPhysicalMonitorArray);
+
+    public int GetCurrentBrightness()
+    {
+        if (TryGetMonitorBrightness(_hwnd, out int pct) && pct >= 0)
+            return pct;
+        return _lastBrightness >= 0 ? _lastBrightness : 75;
+    }
+
+    public void SetBrightnessLevel(int brightnessPercent)
+    {
+        int clamped = Math.Clamp(brightnessPercent, 0, 100);
+        _lastBrightness = clamped;
+
+        // 1. Try DDC/CI for external monitors
+        bool ddcSet = false;
+        if (_hwnd != IntPtr.Zero)
+        {
+            try
+            {
+                IntPtr hMon = NativeMethods.MonitorFromWindow(_hwnd, NativeMethods.MONITOR_DEFAULTTOPRIMARY);
+                if (hMon != IntPtr.Zero && GetNumberOfPhysicalMonitorsFromHMONITOR(hMon, out uint count) && count > 0)
+                {
+                    var monitors = new PHYSICAL_MONITOR[count];
+                    if (GetPhysicalMonitorsFromHMONITOR(hMon, count, monitors))
+                    {
+                        try
+                        {
+                            if (GetMonitorBrightness(monitors[0].hPhysicalMonitor, out uint min, out _, out uint max) && max > min)
+                            {
+                                uint target = min + (uint)Math.Round((clamped / 100.0) * (max - min));
+                                ddcSet = SetMonitorBrightness(monitors[0].hPhysicalMonitor, target);
+                            }
+                        }
+                        finally
+                        {
+                            DestroyPhysicalMonitors(count, monitors);
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // 2. Also invoke WMI WmiSetBrightness asynchronously for laptop panels
+        if (!ddcSet)
+        {
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = "powershell.exe",
+                        Arguments = $"-NoProfile -WindowStyle Hidden -Command \"(Get-CimInstance -Namespace root/WMI -ClassName WmiMonitorBrightnessMethods -ErrorAction SilentlyContinue) | Invoke-CimMethod -MethodName WmiSetBrightness -Arguments @{{Timeout=1; Brightness={clamped}}}\"",
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    };
+                    using var p = Process.Start(psi);
+                    p?.WaitForExit(1500);
+                }
+                catch { }
+            });
+        }
+    }
+
+    public static bool TryGetMasterVolume(out int volumePercent, out bool isMuted)
+        => TryGetEndpointVolume(isCapture: false, out volumePercent, out isMuted);
+
+    public void SetMasterVolume(int volumePercent)
+    {
+        int clamped = Math.Clamp(volumePercent, 0, 100);
+        _lastVolume = clamped;
+        IMMDeviceEnumerator? enumerator = null;
+        IMMDevice? device = null;
+        object? epVolObj = null;
+
+        try
+        {
+            Type? enumeratorType = Type.GetTypeFromCLSID(new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E"));
+            if (enumeratorType == null) return;
+            enumerator = (IMMDeviceEnumerator?)Activator.CreateInstance(enumeratorType);
+            if (enumerator == null) return;
+
+            if (enumerator.GetDefaultAudioEndpoint(0, 1, out device) != 0 || device == null) return;
+            Guid iidAudioEndpointVolume = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
+            if (device.Activate(ref iidAudioEndpointVolume, 23, IntPtr.Zero, out epVolObj) != 0 || epVolObj is not IAudioEndpointVolume epVol) return;
+
+            Guid ctx = Guid.Empty;
+            epVol.SetMasterVolumeLevelScalar(clamped / 100f, ref ctx);
+            if (clamped > 0 && _lastMuted)
+            {
+                epVol.SetMute(false, ref ctx);
+                _lastMuted = false;
+            }
+        }
+        catch { }
+        finally
+        {
+            if (epVolObj != null && Marshal.IsComObject(epVolObj)) Marshal.ReleaseComObject(epVolObj);
+            if (device != null && Marshal.IsComObject(device)) Marshal.ReleaseComObject(device);
+            if (enumerator != null && Marshal.IsComObject(enumerator)) Marshal.ReleaseComObject(enumerator);
+        }
+    }
+
+    public bool ToggleMasterMute()
+    {
+        IMMDeviceEnumerator? enumerator = null;
+        IMMDevice? device = null;
+        object? epVolObj = null;
+
+        try
+        {
+            Type? enumeratorType = Type.GetTypeFromCLSID(new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E"));
+            if (enumeratorType == null) return _lastMuted;
+            enumerator = (IMMDeviceEnumerator?)Activator.CreateInstance(enumeratorType);
+            if (enumerator == null) return _lastMuted;
+
+            if (enumerator.GetDefaultAudioEndpoint(0, 1, out device) != 0 || device == null) return _lastMuted;
+            Guid iidAudioEndpointVolume = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
+            if (device.Activate(ref iidAudioEndpointVolume, 23, IntPtr.Zero, out epVolObj) != 0 || epVolObj is not IAudioEndpointVolume epVol) return _lastMuted;
+
+            epVol.GetMute(out bool currentMute);
+            bool newMute = !currentMute;
+            Guid ctx = Guid.Empty;
+            epVol.SetMute(newMute, ref ctx);
+            _lastMuted = newMute;
+            return newMute;
+        }
+        catch
+        {
+            return _lastMuted;
+        }
+        finally
+        {
+            if (epVolObj != null && Marshal.IsComObject(epVolObj)) Marshal.ReleaseComObject(epVolObj);
+            if (device != null && Marshal.IsComObject(device)) Marshal.ReleaseComObject(device);
+            if (enumerator != null && Marshal.IsComObject(enumerator)) Marshal.ReleaseComObject(enumerator);
+        }
+    }
 
     private static bool TryGetMonitorBrightness(IntPtr hwnd, out int brightnessPercent)
     {

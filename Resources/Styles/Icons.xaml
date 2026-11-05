@@ -105,4 +105,34 @@
 
     <!-- Terminal / Coding Workflow Icon -->
     <Geometry x:Key="IconTerminal">M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-1h-6v-2h6v2zM7.5 17l-1.41-1.41L8.67 13l-2.59-2.59L7.5 9l4 4-4 4z</Geometry>
+
+    <!-- Tools / Quick Settings Sliders Icon -->
+    <Geometry x:Key="IconTools">M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z</Geometry>
+
+    <!-- Wi-Fi Icon -->
+    <Geometry x:Key="IconWifi">M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z</Geometry>
+
+    <!-- Bluetooth Icon -->
+    <Geometry x:Key="IconBluetooth">M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z</Geometry>
+
+    <!-- Airplane Mode Icon -->
+    <Geometry x:Key="IconAirplane">M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z</Geometry>
+
+    <!-- Energy Saver / Leaf Battery Icon -->
+    <Geometry x:Key="IconEnergySaver">M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66l.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z</Geometry>
+
+    <!-- Night Light Icon -->
+    <Geometry x:Key="IconNightLight">M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z</Geometry>
+
+    <!-- Accessibility Icon -->
+    <Geometry x:Key="IconAccessibility">M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z</Geometry>
+
+    <!-- Chevron Right -->
+    <Geometry x:Key="IconChevronRight">M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z</Geometry>
+
+    <!-- Chevron Up -->
+    <Geometry x:Key="IconChevronUp">M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z</Geometry>
+
+    <!-- Taskbar / Toolbar Toggle Icon -->
+    <Geometry x:Key="IconTaskbar">M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 10H4V6h16v8z</Geometry>
 </ResourceDictionary>

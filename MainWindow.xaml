@@ -595,8 +595,9 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <!-- Top Bar: Navigation Tabs & Actions -->
-                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <!-- Top Bar: Navigation Tabs & Actions (Can be hidden via toggle) -->
+                    <Grid Grid.Row="0" Margin="0,0,0,8"
+                          Visibility="{Binding IsTopToolbarHidden, Converter={StaticResource InverseBoolToVisConv}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -747,6 +748,22 @@
                                 </StackPanel>
                             </RadioButton>
 
+                            <!-- System Tools / Quick Settings Tab -->
+                            <RadioButton x:Name="ToolsTabButton"
+                                         Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Tools"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0"
+                                         ToolTip="System Quick Settings (Wi-Fi, Bluetooth, Brightness, Volume &amp; Taskbar Toggle)">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconTools}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Tools" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
                             <!-- Alerts / Notifications Tab -->
                             <RadioButton x:Name="AlertsTabButton"
                                          Style="{StaticResource NotchTabButtonStyle}"
@@ -769,13 +786,15 @@
                             </StackPanel>
                         </ScrollViewer>
 
-                        <!-- Right: Battery & Quick Collapse Button -->
+                        <!-- Right: Battery, Hide Toolbar Toggle & Quick Collapse Buttons -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <!-- Battery status pill -->
+                            <!-- Battery status pill (clicks open Tools tab) -->
                             <Border Background="#1C1C24" CornerRadius="10" Padding="6,2" Margin="0,0,5,0"
                                     BorderBrush="{StaticResource NotchBorderBrush}" BorderThickness="1"
                                     VerticalAlignment="Center"
-                                    ToolTip="System Power Status">
+                                    Cursor="Hand"
+                                    MouseLeftButtonDown="BatteryPill_MouseLeftButtonDown"
+                                    ToolTip="System Power &amp; Quick Tools (Click to open Tools)">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Path Data="{StaticResource IconCharging}"
                                           Fill="#33E07A" Width="9" Height="9" Stretch="Uniform" Margin="0,0,4,0"
@@ -790,6 +809,21 @@
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
+
+                            <!-- Hide Top Toolbar Button -->
+                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                    Width="22" Height="22"
+                                    Padding="4"
+                                    Margin="0,0,2,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Hide top toolbar"
+                                    Command="{Binding ToggleTopToolbarCommand}">
+                                <Path Data="{StaticResource IconChevronUp}"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Width="9" Height="9"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Button>
 
                             <Button Style="{StaticResource NotchIconButtonStyle}"
                                     Width="22" Height="22"
@@ -2712,6 +2746,383 @@
                                     </ScrollViewer>
                                 </Grid>
                             </Grid>
+
+                            <!-- ==================== MODULE J: SYSTEM TOOLS & QUICK SETTINGS ==================== -->
+                            <Grid x:Name="ToolsTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Tools}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Row 0: 6 Quick Settings Tiles (Wi-Fi, Bluetooth, Airplane, Energy Saver, Night Light, Accessibility) -->
+                                <UniformGrid Grid.Row="0" Columns="6" Rows="1" Margin="0,0,0,7">
+                                    <!-- 1. Wi-Fi Split Tile -->
+                                    <StackPanel Margin="0,0,5,0">
+                                        <Border CornerRadius="8" BorderThickness="1" Height="34" ClipToBounds="True">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#1E1E2A" />
+                                                    <Setter Property="BorderBrush" Value="#2E2E3E" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Tools.IsWifiEnabled}" Value="True">
+                                                            <Setter Property="Background" Value="#059669" />
+                                                            <Setter Property="BorderBrush" Value="#34D399" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="1" />
+                                                    <ColumnDefinition Width="26" />
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                        Command="{Binding Tools.ToggleWifiCommand}"
+                                                        ToolTip="Toggle Wi-Fi">
+                                                    <Path Data="{StaticResource IconWifi}" Fill="#FFFFFF" Width="13" Height="13" Stretch="Uniform" />
+                                                </Button>
+                                                <Border Grid.Column="1" Background="#33FFFFFF" Margin="0,5" />
+                                                <Button Grid.Column="2" Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                        Command="{Binding Tools.OpenWifiSettingsCommand}"
+                                                        ToolTip="Open Wi-Fi Networks">
+                                                    <Path Data="{StaticResource IconChevronRight}" Fill="#FFFFFF" Width="10" Height="10" Stretch="Uniform" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                        <TextBlock Text="{Binding Tools.WifiSubtitle}" FontSize="9.5" FontWeight="Medium"
+                                                   Foreground="#ECEFF7" HorizontalAlignment="Center" Margin="0,3,0,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <!-- 2. Bluetooth Split Tile -->
+                                    <StackPanel Margin="0,0,5,0">
+                                        <Border CornerRadius="8" BorderThickness="1" Height="34" ClipToBounds="True">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#1E1E2A" />
+                                                    <Setter Property="BorderBrush" Value="#2E2E3E" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Tools.IsBluetoothEnabled}" Value="True">
+                                                            <Setter Property="Background" Value="#059669" />
+                                                            <Setter Property="BorderBrush" Value="#34D399" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="1" />
+                                                    <ColumnDefinition Width="26" />
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                        Command="{Binding Tools.ToggleBluetoothCommand}"
+                                                        ToolTip="Toggle Bluetooth">
+                                                    <Path Data="{StaticResource IconBluetooth}" Fill="#FFFFFF" Width="13" Height="13" Stretch="Uniform" />
+                                                </Button>
+                                                <Border Grid.Column="1" Background="#33FFFFFF" Margin="0,5" />
+                                                <Button Grid.Column="2" Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                        Command="{Binding Tools.OpenBluetoothSettingsCommand}"
+                                                        ToolTip="Open Bluetooth Devices">
+                                                    <Path Data="{StaticResource IconChevronRight}" Fill="#FFFFFF" Width="10" Height="10" Stretch="Uniform" />
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                        <TextBlock Text="{Binding Tools.BluetoothSubtitle}" FontSize="9.5" FontWeight="Medium"
+                                                   Foreground="#ECEFF7" HorizontalAlignment="Center" Margin="0,3,0,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <!-- 3. Airplane Mode Tile -->
+                                    <StackPanel Margin="0,0,5,0">
+                                        <Border CornerRadius="8" BorderThickness="1" Height="34" ClipToBounds="True">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#1E1E2A" />
+                                                    <Setter Property="BorderBrush" Value="#2E2E3E" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Tools.IsAirplaneMode}" Value="True">
+                                                            <Setter Property="Background" Value="#EA580C" />
+                                                            <Setter Property="BorderBrush" Value="#FB923C" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Button Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                    Command="{Binding Tools.ToggleAirplaneModeCommand}"
+                                                    ToolTip="Toggle Airplane Mode">
+                                                <Path Data="{StaticResource IconAirplane}" Fill="#FFFFFF" Width="13" Height="13" Stretch="Uniform" />
+                                            </Button>
+                                        </Border>
+                                        <TextBlock Text="{Binding Tools.AirplaneSubtitle}" FontSize="9.5" FontWeight="Medium"
+                                                   Foreground="#ECEFF7" HorizontalAlignment="Center" Margin="0,3,0,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <!-- 4. Energy Saver Tile -->
+                                    <StackPanel Margin="0,0,5,0">
+                                        <Border CornerRadius="8" BorderThickness="1" Height="34" ClipToBounds="True">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#1E1E2A" />
+                                                    <Setter Property="BorderBrush" Value="#2E2E3E" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Tools.IsEnergySaver}" Value="True">
+                                                            <Setter Property="Background" Value="#059669" />
+                                                            <Setter Property="BorderBrush" Value="#34D399" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Button Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                    Command="{Binding Tools.ToggleEnergySaverCommand}"
+                                                    ToolTip="Toggle Battery Energy Saver">
+                                                <Path Data="{StaticResource IconEnergySaver}" Fill="#FFFFFF" Width="13" Height="13" Stretch="Uniform" />
+                                            </Button>
+                                        </Border>
+                                        <TextBlock Text="{Binding Tools.EnergySaverSubtitle}" FontSize="9.5" FontWeight="Medium"
+                                                   Foreground="#ECEFF7" HorizontalAlignment="Center" Margin="0,3,0,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <!-- 5. Night Light Tile -->
+                                    <StackPanel Margin="0,0,5,0">
+                                        <Border CornerRadius="8" BorderThickness="1" Height="34" ClipToBounds="True">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#1E1E2A" />
+                                                    <Setter Property="BorderBrush" Value="#2E2E3E" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Tools.IsNightLight}" Value="True">
+                                                            <Setter Property="Background" Value="#EA580C" />
+                                                            <Setter Property="BorderBrush" Value="#FB923C" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Button Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                    Command="{Binding Tools.ToggleNightLightCommand}"
+                                                    ToolTip="Open / Toggle Night Light">
+                                                <Path Data="{StaticResource IconSun}" Fill="#FFFFFF" Width="13" Height="13" Stretch="Uniform" />
+                                            </Button>
+                                        </Border>
+                                        <TextBlock Text="{Binding Tools.NightLightSubtitle}" FontSize="9.5" FontWeight="Medium"
+                                                   Foreground="#ECEFF7" HorizontalAlignment="Center" Margin="0,3,0,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <!-- 6. Accessibility Tile -->
+                                    <StackPanel>
+                                        <Border CornerRadius="8" Background="#1E1E2A" BorderBrush="#2E2E3E" BorderThickness="1" Height="34" ClipToBounds="True">
+                                            <Button Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                    Command="{Binding Tools.OpenAccessibilityCommand}"
+                                                    ToolTip="Open Accessibility Settings">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Path Data="{StaticResource IconAccessibility}" Fill="#FFFFFF" Width="13" Height="13" Stretch="Uniform" Margin="0,0,4,0" />
+                                                    <Path Data="{StaticResource IconChevronRight}" Fill="#A1A1B5" Width="10" Height="10" Stretch="Uniform" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Border>
+                                        <TextBlock Text="Accessibility" FontSize="9.5" FontWeight="Medium"
+                                                   Foreground="#ECEFF7" HorizontalAlignment="Center" Margin="0,3,0,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </UniformGrid>
+
+                                <!-- Row 1: Brightness & Volume Interactive Sliders -->
+                                <Border Grid.Row="1" Background="#16161F" BorderBrush="#252535" BorderThickness="1"
+                                        CornerRadius="10" Padding="12,6" Margin="0,0,0,7" VerticalAlignment="Center">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="18" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Left: Brightness Slider -->
+                                        <Grid Grid.Column="0" VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="34" />
+                                            </Grid.ColumnDefinitions>
+                                            <Path Grid.Column="0" Data="{StaticResource IconSun}" Fill="#FBBF24"
+                                                  Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,8,0"
+                                                  ToolTip="Display Brightness" />
+                                            <Slider Grid.Column="1" Minimum="0" Maximum="100"
+                                                    Value="{Binding Tools.Brightness, Mode=TwoWay}"
+                                                    VerticalAlignment="Center" Cursor="Hand"
+                                                    Foreground="#10B981" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Tools.Brightness, StringFormat='{}{0}%'}"
+                                                       FontSize="10" FontWeight="SemiBold" Foreground="#ECEFF7"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+
+                                        <!-- Right: Volume Slider + Mute + Sound Output -->
+                                        <Grid Grid.Column="2" VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="34" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="22" Height="22" Padding="3" Margin="0,0,6,0"
+                                                    Command="{Binding Tools.ToggleMuteCommand}"
+                                                    ToolTip="Mute / Unmute Volume">
+                                                <Grid>
+                                                    <Path Data="{StaticResource IconVolume}" Fill="#34D399" Width="13" Height="13" Stretch="Uniform"
+                                                          Visibility="{Binding Tools.IsMuted, Converter={StaticResource InverseBoolToVisConv}}" />
+                                                    <Path Data="{StaticResource IconVolumeMute}" Fill="#F87171" Width="13" Height="13" Stretch="Uniform"
+                                                          Visibility="{Binding Tools.IsMuted, Converter={StaticResource BoolToVisConv}}" />
+                                                </Grid>
+                                            </Button>
+                                            <Slider Grid.Column="1" Minimum="0" Maximum="100"
+                                                    Value="{Binding Tools.Volume, Mode=TwoWay}"
+                                                    VerticalAlignment="Center" Cursor="Hand"
+                                                    Foreground="#10B981" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Tools.Volume, StringFormat='{}{0}%'}"
+                                                       FontSize="10" FontWeight="SemiBold" Foreground="#ECEFF7"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            <Button Grid.Column="3" Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="24" Height="22" Padding="3" Margin="4,0,0,0"
+                                                    Command="{Binding Tools.OpenSoundOutputCommand}"
+                                                    ToolTip="Select Sound Output Device">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Path Data="{StaticResource IconTools}" Fill="#ECEFF7" Width="10" Height="10" Stretch="Uniform" Margin="0,0,2,0" />
+                                                    <Path Data="{StaticResource IconChevronRight}" Fill="#A1A1B5" Width="8" Height="8" Stretch="Uniform" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Row 2: Taskbar / System Status Bar + Hide Taskbar & Hide Top Bar Toggles -->
+                                <Border Grid.Row="2" Background="#12121A" BorderBrush="#252535" BorderThickness="1"
+                                        CornerRadius="9" Padding="10,4">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Keyboard Language Pill (ENG / INTL) -->
+                                        <Button Grid.Column="0" Background="#1C1C28" BorderBrush="#2E2E3E" BorderThickness="1"
+                                                Padding="6,2" Margin="0,0,8,0" Cursor="Hand"
+                                                Command="{Binding Tools.OpenLanguageSettingsCommand}"
+                                                ToolTip="Keyboard &amp; Input Language Settings">
+                                            <Button.Resources>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="CornerRadius" Value="5" />
+                                                </Style>
+                                            </Button.Resources>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Tools.KeyboardLayoutCode}" FontSize="9.5" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,0,4,0" />
+                                                <TextBlock Text="{Binding Tools.KeyboardLayoutSub}" FontSize="8.5" FontWeight="SemiBold" Foreground="#34D399" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- System Icons Strip: Network + Speaker + Battery % -->
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <Path Data="{StaticResource IconWifi}" Fill="#ECEFF7" Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,7,0" />
+                                            <Path Data="{StaticResource IconVolume}" Fill="#ECEFF7" Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,7,0" />
+                                            <Path Data="{StaticResource IconCharging}" Fill="#34D399" Width="10" Height="10" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,3,0"
+                                                  Visibility="{Binding IsCharging, Converter={StaticResource BoolToVisConv}}" />
+                                            <Path Data="{StaticResource IconBattery}" Fill="#34D399" Width="10" Height="10" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,3,0"
+                                                  Visibility="{Binding IsCharging, Converter={StaticResource InverseBoolToVisConv}}" />
+                                            <TextBlock Text="{Binding BatteryPercent, StringFormat='{}{0}%'}" FontSize="10" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                        </StackPanel>
+
+                                        <!-- Center: Live Date & Clock (| Thu, Nov 05 2026 | 02:08:16 pm |) -->
+                                        <TextBlock Grid.Column="2" Text="{Binding Tools.FullClockText}"
+                                                   FontSize="10" FontWeight="Medium" Foreground="#ECEFF7"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+
+                                        <!-- Right: Hide Windows Taskbar Toggle + Hide Top Toolbar Toggle + Settings Gear -->
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <!-- Toggle Windows Taskbar Button -->
+                                            <Border CornerRadius="6" BorderThickness="1" Margin="0,0,5,0" Cursor="Hand">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#152C24" />
+                                                        <Setter Property="BorderBrush" Value="#10B981" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Tools.IsWindowsTaskbarHidden}" Value="True">
+                                                                <Setter Property="Background" Value="#3A1D12" />
+                                                                <Setter Property="BorderBrush" Value="#F97316" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Button Background="Transparent" BorderThickness="0" Padding="7,3" Cursor="Hand"
+                                                        Command="{Binding Tools.ToggleWindowsTaskbarCommand}"
+                                                        ToolTip="Hide or Show the Windows Taskbar at the bottom of your screen">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Path Data="{StaticResource IconTaskbar}" Fill="#FFFFFF" Width="10" Height="10" Stretch="Uniform" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                        <TextBlock FontSize="9.5" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value="Hide Taskbar" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Tools.IsWindowsTaskbarHidden}" Value="True">
+                                                                            <Setter Property="Text" Value="Show Taskbar" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </Button>
+                                            </Border>
+
+                                            <!-- Toggle Top Notch Toolbar Button -->
+                                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="22" Height="22" Padding="4" Margin="0,0,3,0"
+                                                    Command="{Binding ToggleTopToolbarCommand}"
+                                                    ToolTip="Toggle Notch Top Tab Bar">
+                                                <Path Data="{StaticResource IconChevronUp}" Fill="#ECEFF7" Width="9" Height="9" Stretch="Uniform" />
+                                            </Button>
+
+                                            <!-- Windows Settings Gear -->
+                                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="22" Height="22" Padding="4"
+                                                    Command="{Binding Tools.OpenWindowsSettingsCommand}"
+                                                    ToolTip="Open Windows Settings">
+                                                <Path Data="{StaticResource IconGear}" Fill="#ECEFF7" Width="11" Height="11" Stretch="Uniform" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+
+                            <!-- Floating Restore Top Toolbar Pill (Only visible when Top Toolbar is hidden) -->
+                            <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Margin="0,-4,-4,0"
+                                    Background="#181822" BorderBrush="#10B981" BorderThickness="1"
+                                    CornerRadius="8" Padding="5,2"
+                                    Panel.ZIndex="20"
+                                    Visibility="{Binding IsTopToolbarHidden, Converter={StaticResource BoolToVisConv}}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                            Width="20" Height="18" Padding="2"
+                                            ToolTip="Show Top Toolbar"
+                                            Command="{Binding ToggleTopToolbarCommand}">
+                                        <Path Data="{StaticResource IconChevronDown}" Fill="#34D399" Width="9" Height="9" Stretch="Uniform" />
+                                    </Button>
+                                    <Button Style="{StaticResource NotchIconButtonStyle}"
+                                            Width="20" Height="18" Padding="2"
+                                            ToolTip="Collapse Notch"
+                                            Click="CollapseButton_Click">
+                                        <Path Data="{StaticResource IconClose}" Fill="#A1A1B5" Width="8" Height="8" Stretch="Uniform" />
+                                    </Button>
+                                </StackPanel>
+                            </Border>
                         </Grid>
                     </Border>
                 </Grid>

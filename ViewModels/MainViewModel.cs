@@ -111,6 +111,9 @@ public partial class MainViewModel : ObservableObject
     private bool _isMinimal = false;
 
     [ObservableProperty]
+    private bool _isTopToolbarHidden = false;
+
+    [ObservableProperty]
     private string _currentTimeText = DateTime.Now.ToString("HH:mm");
 
     public event Action? WakeUpRequested;
@@ -135,6 +138,7 @@ public partial class MainViewModel : ObservableObject
     public NotificationListenerService NotificationListener { get; }
     public HardwareHudService HardwareHud { get; }
     public UsageViewModel Usage { get; }
+    public ToolsViewModel Tools { get; }
 
     public bool IsExpanded => State == NotchState.Expanded;
 
@@ -155,6 +159,8 @@ public partial class MainViewModel : ObservableObject
         Shelf = new ShelfViewModel();
         AI = new AiAssistantViewModel(aiService);
         Usage = new UsageViewModel();
+        Tools = new ToolsViewModel(HardwareHud);
+        Tools.FeedbackRequested += (title, sub) => TriggerPeek(title, sub);
 
         // AI coding workflow notifications → notch banner + persistent Alerts history
         Usage.WorkflowNotification += ev =>
@@ -416,5 +422,11 @@ public partial class MainViewModel : ObservableObject
     public void ToggleForceHide()
     {
         IsForceHidden = !IsForceHidden;
+    }
+
+    [RelayCommand]
+    public void ToggleTopToolbar()
+    {
+        IsTopToolbarHidden = !IsTopToolbarHidden;
     }
 }

@@ -225,7 +225,23 @@ public class TrayIconManager : IDisposable
         openAlertsItem.Click += (s, e) => OpenTabRequested?.Invoke("Notifications");
         menu.Items.Add(openAlertsItem);
 
+        var openToolsItem = new MenuItem { Header = "Open System Tools (Wi-Fi, Bluetooth, Volume)" };
+        openToolsItem.Click += (s, e) => OpenTabRequested?.Invoke("Tools");
+        menu.Items.Add(openToolsItem);
+
         menu.Items.Add(new Separator());
+
+        if (vm?.Tools != null)
+        {
+            var hideTaskbarItem = new MenuItem
+            {
+                Header = "Hide Windows Taskbar",
+                IsCheckable = true,
+                IsChecked = vm.Tools.IsWindowsTaskbarHidden
+            };
+            hideTaskbarItem.Click += (s, e) => vm.Tools.ToggleWindowsTaskbar();
+            menu.Items.Add(hideTaskbarItem);
+        }
 
         if (vm?.Usage != null)
         {

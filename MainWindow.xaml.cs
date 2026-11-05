@@ -309,6 +309,8 @@ public partial class MainWindow : Window
                     ShelfTabButton.IsChecked = true;
                 else if (string.Equals(tabName, "Notifications", StringComparison.OrdinalIgnoreCase) && AlertsTabButton != null)
                     AlertsTabButton.IsChecked = true;
+                else if (string.Equals(tabName, "Tools", StringComparison.OrdinalIgnoreCase) && ToolsTabButton != null)
+                    ToolsTabButton.IsChecked = true;
 
                 if (!_isExpanded)
                 {
@@ -930,7 +932,27 @@ public partial class MainWindow : Window
                     catch { }
                 }), DispatcherPriority.Input);
             }
+            else if (string.Equals(tabName, "Tools", StringComparison.OrdinalIgnoreCase) && DataContext is MainViewModel toolsVm)
+            {
+                toolsVm.Tools.SyncHardwareLevels();
+                _ = toolsVm.Tools.RefreshRadiosAsync();
+            }
         }
+    }
+
+    private void BatteryPill_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (ToolsTabButton != null)
+        {
+            ToolsTabButton.IsChecked = true;
+        }
+        if (DataContext is MainViewModel vm)
+        {
+            vm.SelectTab("Tools");
+            vm.Tools.SyncHardwareLevels();
+            _ = vm.Tools.RefreshRadiosAsync();
+        }
+        e.Handled = true;
     }
 
     private void MinimizeToTinyPillButton_Click(object sender, RoutedEventArgs e)
@@ -1391,6 +1413,10 @@ public partial class MainWindow : Window
 
         if (DataContext is MainViewModel vm)
         {
+            if (vm.Tools.IsWindowsTaskbarHidden)
+            {
+                ToolsViewModel.SetWindowsTaskbarVisibility(true);
+            }
             vm.SystemStatus.Dispose();
             vm.HardwareHud.Dispose();
             vm.Usage.Dispose();
