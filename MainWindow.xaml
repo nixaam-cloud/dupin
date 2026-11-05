@@ -23,31 +23,52 @@
 
     <!-- Outer Canvas / Grid with hit test transparency -->
     <Grid Background="{x:Null}">
-        <!-- Floating Notch Container -->
-        <Border x:Name="NotchContainer"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top"
-                Width="180"
-                Height="32"
-                CornerRadius="0,0,16,16"
-                Background="{StaticResource NotchBackgroundBrush}"
-                BorderBrush="{StaticResource PillBorderGradientBrush}"
-                BorderThickness="1,0,1,1"
-                SnapsToDevicePixels="True"
-                Cursor="Arrow"
-                AllowDrop="True"
-                Drop="NotchContainer_Drop"
-                PreviewDragOver="NotchContainer_PreviewDragOver"
-                MouseEnter="NotchContainer_MouseEnter"
-                MouseLeave="NotchContainer_MouseLeave">
-
-            <Border.Effect>
+        <!-- Seamless Notch Silhouette Wrapper (Top Concave Ears + Center Notch Container) -->
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    SnapsToDevicePixels="True"
+                    UseLayoutRounding="True">
+            <StackPanel.Effect>
                 <DropShadowEffect BlurRadius="18"
                                   Color="#000000"
                                   Opacity="0.65"
                                   ShadowDepth="4"
                                   Direction="270" />
-            </Border.Effect>
+            </StackPanel.Effect>
+
+            <!-- Top-Left Concave Notch Ear / Fillet (Curves smoothly from top screen edge into left wall) -->
+            <Grid x:Name="LeftNotchEar"
+                  Width="12"
+                  Height="12"
+                  VerticalAlignment="Top"
+                  Margin="0,0,-1,0"
+                  Panel.ZIndex="2"
+                  IsHitTestVisible="False">
+                <Path Data="M 0,0 L 13,0 L 13,12 L 12,12 A 12,12 0 0 0 0,0 Z"
+                      Fill="{StaticResource NotchBackgroundBrush}" />
+                <Path Data="M 0,0.5 A 12,12 0 0 1 12.5,12"
+                      Stroke="{StaticResource PillBorderGradientBrush}"
+                      StrokeThickness="1" />
+            </Grid>
+
+            <!-- Floating Notch Container -->
+            <Border x:Name="NotchContainer"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Width="180"
+                    Height="32"
+                    CornerRadius="0,0,15,15"
+                    Background="{StaticResource NotchBackgroundBrush}"
+                    BorderBrush="{StaticResource PillBorderGradientBrush}"
+                    BorderThickness="1,0,1,1"
+                    SnapsToDevicePixels="True"
+                    Cursor="Arrow"
+                    AllowDrop="True"
+                    Drop="NotchContainer_Drop"
+                    PreviewDragOver="NotchContainer_PreviewDragOver"
+                    MouseEnter="NotchContainer_MouseEnter"
+                    MouseLeave="NotchContainer_MouseLeave">
 
             <Grid ClipToBounds="True">
                 <!-- ==================== COLLAPSED PILL VIEW ==================== -->
@@ -2720,6 +2741,22 @@
                         PreviewMouseLeftButtonUp="SideResizeHandle_PreviewMouseLeftButtonUp"
                         Tag="BottomRight" />
             </Grid>
-        </Border>
+            </Border>
+
+            <!-- Top-Right Concave Notch Ear / Fillet (Curves smoothly from right wall into top screen edge) -->
+            <Grid x:Name="RightNotchEar"
+                  Width="12"
+                  Height="12"
+                  VerticalAlignment="Top"
+                  Margin="-1,0,0,0"
+                  Panel.ZIndex="2"
+                  IsHitTestVisible="False">
+                <Path Data="M 0,0 L 13,0 A 12,12 0 0 0 1,12 L 0,12 Z"
+                      Fill="{StaticResource NotchBackgroundBrush}" />
+                <Path Data="M 13,0.5 A 12,12 0 0 0 0.5,12"
+                      Stroke="{StaticResource PillBorderGradientBrush}"
+                      StrokeThickness="1" />
+            </Grid>
+        </StackPanel>
     </Grid>
 </Window>

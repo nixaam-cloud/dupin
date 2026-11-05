@@ -69,7 +69,13 @@ public class FullscreenDetector
         var mi = new NativeMethods.MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MONITORINFO>() };
         if (NativeMethods.GetMonitorInfo(hMon, ref mi))
         {
-            // If the foreground window bounds match or cover the monitor bounds
+            // Only suppress the notch if the fullscreen window is on the PRIMARY monitor (MONITORINFOF_PRIMARY = 1)
+            if ((mi.dwFlags & 1) == 0)
+            {
+                return false;
+            }
+
+            // If the foreground window bounds match or cover the primary monitor bounds
             if (fgRect.Left <= mi.rcMonitor.Left &&
                 fgRect.Top <= mi.rcMonitor.Top &&
                 fgRect.Right >= mi.rcMonitor.Right &&

@@ -49,7 +49,6 @@ public partial class MainWindow : Window
     private FullscreenDetector? _fullscreenDetector;
     private TrayIconManager? _trayManager;
     private IntPtr _hwnd = IntPtr.Zero;
-    private IntPtr _currentMonitorHandle = IntPtr.Zero;
     private bool _isExpanded = false;
     private bool _isMinimal = false;
     private bool _isForceHidden = false;
@@ -94,7 +93,6 @@ public partial class MainWindow : Window
     {
         this.Height = COLLAPSED_HEIGHT + 32;
         UpdatePosition(force: true);
-        _cursorMonitorTimer.Start();
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
         if (DataContext is MainViewModel vm)
@@ -340,13 +338,10 @@ public partial class MainWindow : Window
 
     private void UpdatePosition(bool force = false)
     {
-        Point topCenter = ScreenHelper.GetTopCenterPositionForCursor(this.Width, out IntPtr monHandle, 0);
-        if (force || (monHandle != IntPtr.Zero && monHandle != _currentMonitorHandle))
-        {
-            _currentMonitorHandle = monHandle;
-            this.Left = topCenter.X;
-            this.Top = topCenter.Y;
-        }
+        // Keep the notch anchored exclusively to the top-center of the primary screen
+        Point topCenter = ScreenHelper.GetTopCenterPosition(this.Width, 0);
+        this.Left = topCenter.X;
+        this.Top = topCenter.Y;
     }
 
     private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
