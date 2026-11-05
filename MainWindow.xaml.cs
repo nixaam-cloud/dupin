@@ -890,6 +890,46 @@ public partial class MainWindow : Window
             {
                 vm.SelectTab(tabName);
             }
+
+            if (string.Equals(tabName, "AI", StringComparison.OrdinalIgnoreCase))
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        this.Activate();
+                        AiInputBox?.Focus();
+                        Keyboard.Focus(AiInputBox);
+                    }
+                    catch { }
+                }), DispatcherPriority.Input);
+            }
+            else if (string.Equals(tabName, "Todo", StringComparison.OrdinalIgnoreCase))
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        this.Activate();
+                        TodoInputBox?.Focus();
+                        Keyboard.Focus(TodoInputBox);
+                    }
+                    catch { }
+                }), DispatcherPriority.Input);
+            }
+            else if (string.Equals(tabName, "Weather", StringComparison.OrdinalIgnoreCase))
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        this.Activate();
+                        WeatherCityInputBox?.Focus();
+                        Keyboard.Focus(WeatherCityInputBox);
+                    }
+                    catch { }
+                }), DispatcherPriority.Input);
+            }
         }
     }
 

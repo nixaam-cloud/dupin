@@ -102,4 +102,11 @@
         </Setter>
     </Style>
 
+    <!-- Default High-Contrast Caret & Selection for Dark-Mode TextBoxes -->
+    <Style TargetType="TextBox">
+        <Setter Property="CaretBrush" Value="#34D399" />
+        <Setter Property="SelectionBrush" Value="#10B981" />
+        <Setter Property="SelectionOpacity" Value="0.45" />
+    </Style>
+
 </ResourceDictionary>

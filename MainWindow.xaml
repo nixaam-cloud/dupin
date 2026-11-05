@@ -1370,15 +1370,34 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border Grid.Column="0" Background="#1C1C24" CornerRadius="8" BorderBrush="{StaticResource NotchBorderBrush}" BorderThickness="1" Padding="6,2" Margin="0,0,4,0">
-                                            <TextBox x:Name="WeatherCityInputBox"
-                                                     Text="{Binding Weather.CitySearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                                                     Background="Transparent"
-                                                     BorderThickness="0"
-                                                     Foreground="{StaticResource TextPrimaryBrush}"
-                                                     FontSize="10"
-                                                     VerticalAlignment="Center"
-                                                     ToolTip="Type a city name (e.g. Tokyo, London, Malé) and press Enter"
-                                                     KeyDown="WeatherCityInputBox_KeyDown" />
+                                            <Grid>
+                                                <TextBlock Text="Search city..."
+                                                           FontSize="10"
+                                                           Foreground="{StaticResource TextMutedBrush}"
+                                                           VerticalAlignment="Center"
+                                                           IsHitTestVisible="False">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Text, ElementName=WeatherCityInputBox}" Value="">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBox x:Name="WeatherCityInputBox"
+                                                         Text="{Binding Weather.CitySearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                                         CaretBrush="#34D399"
+                                                         Background="Transparent"
+                                                         BorderThickness="0"
+                                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                                         FontSize="10"
+                                                         VerticalAlignment="Center"
+                                                         ToolTip="Type a city name (e.g. Tokyo, London, Malé) and press Enter"
+                                                         KeyDown="WeatherCityInputBox_KeyDown" />
+                                            </Grid>
                                         </Border>
                                         <Button Grid.Column="1"
                                                 Content="Search City"
@@ -1609,9 +1628,28 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Text="Add a new task..."
+                                                       FontSize="10.5"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="2,0,0,0"
+                                                       IsHitTestVisible="False">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Text, ElementName=TodoInputBox}" Value="">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
                                             <TextBox x:Name="TodoInputBox"
                                                      Grid.Column="0"
                                                      Text="{Binding Todo.NewTaskTitle, UpdateSourceTrigger=PropertyChanged}"
+                                                     CaretBrush="#34D399"
                                                      Background="Transparent"
                                                      BorderThickness="0"
                                                      Foreground="{StaticResource TextPrimaryBrush}"
@@ -1917,6 +1955,7 @@
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <RadioButton x:Name="AiProviderGemini"
                                                      Content="Gemini 3.8 Flash"
+                                                     GroupName="AiProviders"
                                                      Style="{StaticResource NotchTabButtonStyle}"
                                                      Padding="6,2" FontSize="10"
                                                      IsChecked="True"
@@ -1925,6 +1964,7 @@
                                                      Margin="0,0,4,0" />
                                         <RadioButton x:Name="AiProviderClaude"
                                                      Content="Claude 3.5 Sonnet"
+                                                     GroupName="AiProviders"
                                                      Style="{StaticResource NotchTabButtonStyle}"
                                                      Padding="6,2" FontSize="10"
                                                      Click="AiProvider_Click"
@@ -1932,6 +1972,7 @@
                                                      Margin="0,0,4,0" />
                                         <RadioButton x:Name="AiProviderOpenAi"
                                                      Content="OpenAI GPT-4o"
+                                                     GroupName="AiProviders"
                                                      Style="{StaticResource NotchTabButtonStyle}"
                                                      Padding="6,2" FontSize="10"
                                                      Click="AiProvider_Click"
@@ -2217,19 +2258,48 @@
                                 <Border Grid.Row="2"
                                         Background="#1C1C24"
                                         CornerRadius="10"
-                                        BorderBrush="{StaticResource NotchBorderBrush}"
                                         BorderThickness="1"
-                                        Padding="6,2"
+                                        Padding="8,3"
                                         Margin="0,4,0,0">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="{StaticResource NotchBorderBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsKeyboardFocused, ElementName=AiInputBox}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#10B981" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
+                                        <TextBlock Grid.Column="0"
+                                                   Text="Type a prompt or question... (Enter to send)"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource TextMutedBrush}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="2,0,0,0"
+                                                   IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=AiInputBox}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
                                         <TextBox x:Name="AiInputBox"
                                                  Grid.Column="0"
                                                  Text="{Binding AI.Prompt, UpdateSourceTrigger=PropertyChanged}"
+                                                 CaretBrush="#34D399"
                                                  Background="Transparent"
                                                  BorderThickness="0"
                                                  Foreground="{StaticResource TextPrimaryBrush}"
