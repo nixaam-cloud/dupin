@@ -235,7 +235,7 @@ public class TrayIconManager : IDisposable
         {
             var hideTaskbarItem = new MenuItem
             {
-                Header = "Hide Windows Taskbar",
+                Header = "Hide Taskbar System Tray (Keep Start & Apps)",
                 IsCheckable = true,
                 IsChecked = vm.Tools.IsWindowsTaskbarHidden
             };

@@ -3062,16 +3062,16 @@
                                                 </Border.Style>
                                                 <Button Background="Transparent" BorderThickness="0" Padding="7,3" Cursor="Hand"
                                                         Command="{Binding Tools.ToggleWindowsTaskbarCommand}"
-                                                        ToolTip="Hide or Show the Windows Taskbar at the bottom of your screen">
+                                                        ToolTip="Hide or Show the right-side Windows System Tray / Toolbar while keeping Start Menu &amp; apps visible">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                         <Path Data="{StaticResource IconTaskbar}" Fill="#FFFFFF" Width="10" Height="10" Stretch="Uniform" Margin="0,0,4,0" VerticalAlignment="Center" />
                                                         <TextBlock FontSize="9.5" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center">
                                                             <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">
-                                                                    <Setter Property="Text" Value="Hide Taskbar" />
+                                                                    <Setter Property="Text" Value="Hide Toolbar" />
                                                                     <Style.Triggers>
                                                                         <DataTrigger Binding="{Binding Tools.IsWindowsTaskbarHidden}" Value="True">
-                                                                            <Setter Property="Text" Value="Show Taskbar" />
+                                                                            <Setter Property="Text" Value="Show Toolbar" />
                                                                         </DataTrigger>
                                                                     </Style.Triggers>
                                                                 </Style>

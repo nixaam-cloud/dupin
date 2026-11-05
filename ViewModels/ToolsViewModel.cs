@@ -82,6 +82,7 @@ public partial class ToolsViewModel : ObservableObject
         SyncHardwareLevels();
         _ = RefreshRadiosAsync();
         UpdateKeyboardAndClock();
+        EnsureFullTaskbarRestored();
 
         _syncTimer = new DispatcherTimer
         {
@@ -91,6 +92,10 @@ public partial class ToolsViewModel : ObservableObject
         {
             UpdateKeyboardAndClock();
             SyncHardwareLevels();
+            if (IsWindowsTaskbarHidden)
+            {
+                UpdateTrayCoverPosition();
+            }
         };
         _syncTimer.Start();
     }
@@ -338,39 +343,278 @@ public partial class ToolsViewModel : ObservableObject
     [RelayCommand]
     public void OpenLanguageSettings() => OpenSettingsUri("ms-settings:regionlanguage");
 
+    private static System.Windows.Window? _trayCoverWindow;
+    private static int _cachedTrayNotifyLeft = -1;
+
     [RelayCommand]
     public void ToggleWindowsTaskbar()
     {
         IsWindowsTaskbarHidden = !IsWindowsTaskbarHidden;
         SetWindowsTaskbarVisibility(!IsWindowsTaskbarHidden);
         FeedbackRequested?.Invoke(
-            IsWindowsTaskbarHidden ? "Taskbar Hidden" : "Taskbar Restored",
-            IsWindowsTaskbarHidden ? "Windows taskbar hidden · Notch active" : "Windows taskbar visible again");
+            IsWindowsTaskbarHidden ? "System Tray Hidden" : "System Tray Restored",
+            IsWindowsTaskbarHidden ? "Right taskbar tray hidden · Start & apps kept" : "Right taskbar system tray visible again");
+    }
+
+    public static void EnsureFullTaskbarRestored()
+    {
+        try
+        {
+            IntPtr shellTray = FindWindow("Shell_TrayWnd", null);
+            if (shellTray != IntPtr.Zero)
+            {
+                var abd = new APPBARDATA();
+                abd.cbSize = Marshal.SizeOf(abd);
+                abd.hWnd = shellTray;
+                abd.lParam = ABS_ALWAYSONTOP;
+                SHAppBarMessage(ABM_SETSTATE, ref abd);
+                ShowWindow(shellTray, SW_SHOW);
+
+                IntPtr trayNotify = FindWindowEx(shellTray, IntPtr.Zero, "TrayNotifyWnd", null);
+                if (trayNotify != IntPtr.Zero && GetWindowRect(trayNotify, out RECT nr) && nr.right > nr.left)
+                {
+                    _cachedTrayNotifyLeft = nr.left;
+                }
+            }
+
+            IntPtr secondaryHwnd = FindWindow("Shell_SecondaryTrayWnd", null);
+            if (secondaryHwnd != IntPtr.Zero)
+            {
+                ShowWindow(secondaryHwnd, SW_SHOW);
+            }
+        }
+        catch { }
     }
 
     public static void SetWindowsTaskbarVisibility(bool visible)
     {
         try
         {
-            // 1. Set AppBar AutoHide state so maximized windows reclaim the full screen when hidden
-            var abd = new APPBARDATA();
-            abd.cbSize = Marshal.SizeOf(abd);
-            abd.hWnd = FindWindow("Shell_TrayWnd", null);
-            if (abd.hWnd != IntPtr.Zero)
+            // Always keep main Shell_TrayWnd (Start Menu + App Icons) visible!
+            EnsureFullTaskbarRestored();
+
+            IntPtr shellTray = FindWindow("Shell_TrayWnd", null);
+            if (shellTray != IntPtr.Zero)
             {
-                abd.lParam = visible ? ABS_ALWAYSONTOP : ABS_AUTOHIDE;
-                SHAppBarMessage(ABM_SETSTATE, ref abd);
-                ShowWindow(abd.hWnd, visible ? SW_SHOW : SW_HIDE);
+                IntPtr trayNotify = FindWindowEx(shellTray, IntPtr.Zero, "TrayNotifyWnd", null);
+                if (trayNotify != IntPtr.Zero)
+                {
+                    if (GetWindowRect(trayNotify, out RECT nr) && nr.right > nr.left && nr.left > 0)
+                    {
+                        _cachedTrayNotifyLeft = nr.left;
+                    }
+
+                    // Hide/Show only the right-side System Tray / Notification / Clock area
+                    ShowWindow(trayNotify, visible ? SW_SHOW : SW_HIDE);
+                    EnumChildWindows(trayNotify, (child, _) =>
+                    {
+                        ShowWindow(child, visible ? SW_SHOW : SW_HIDE);
+                        return true;
+                    }, IntPtr.Zero);
+                }
             }
 
-            IntPtr secondaryHwnd = FindWindow("Shell_SecondaryTrayWnd", null);
-            if (secondaryHwnd != IntPtr.Zero)
+            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
             {
-                ShowWindow(secondaryHwnd, visible ? SW_SHOW : SW_HIDE);
-            }
+                if (visible)
+                {
+                    if (_trayCoverWindow != null)
+                    {
+                        _trayCoverWindow.Hide();
+                    }
+                }
+                else
+                {
+                    ShowOrUpdateTrayCoverWindow();
+                }
+            });
         }
         catch { }
     }
+
+    public static void UpdateTrayCoverPosition()
+    {
+        System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            if (_trayCoverWindow != null && _trayCoverWindow.IsVisible)
+            {
+                PositionTrayCoverWindow(_trayCoverWindow);
+            }
+        });
+    }
+
+    private static void ShowOrUpdateTrayCoverWindow()
+    {
+        if (_trayCoverWindow == null)
+        {
+            var border = new System.Windows.Controls.Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x1F, 0x1F, 0x1F)),
+                BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x2D, 0x2D, 0x2D)),
+                BorderThickness = new System.Windows.Thickness(0, 1, 0, 0),
+                ToolTip = "System Tray hidden by Dupin (Double-click to restore)"
+            };
+
+            _trayCoverWindow = new System.Windows.Window
+            {
+                WindowStyle = System.Windows.WindowStyle.None,
+                ResizeMode = System.Windows.ResizeMode.NoResize,
+                AllowsTransparency = false,
+                ShowInTaskbar = false,
+                ShowActivated = false,
+                Topmost = true,
+                Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x1F, 0x1F, 0x1F)),
+                Content = border
+            };
+
+            _trayCoverWindow.MouseDoubleClick += (s, e) =>
+            {
+                if (System.Windows.Application.Current?.MainWindow?.DataContext is MainViewModel mvm)
+                {
+                    mvm.Tools.ToggleWindowsTaskbar();
+                }
+                else
+                {
+                    SetWindowsTaskbarVisibility(true);
+                }
+            };
+
+            _trayCoverWindow.SourceInitialized += (s, e) =>
+            {
+                var hwnd = new System.Windows.Interop.WindowInteropHelper(_trayCoverWindow).Handle;
+                int exStyle = Core.Native.NativeMethods.GetWindowLong(hwnd, Core.Native.NativeMethods.GWL_EXSTYLE);
+                exStyle |= Core.Native.NativeMethods.WS_EX_TOOLWINDOW | Core.Native.NativeMethods.WS_EX_NOACTIVATE;
+                Core.Native.NativeMethods.SetWindowLong(hwnd, Core.Native.NativeMethods.GWL_EXSTYLE, exStyle);
+            };
+        }
+
+        PositionTrayCoverWindow(_trayCoverWindow);
+        if (!_trayCoverWindow.IsVisible)
+        {
+            _trayCoverWindow.Show();
+        }
+    }
+
+    private static void PositionTrayCoverWindow(System.Windows.Window cover)
+    {
+        IntPtr shellTray = FindWindow("Shell_TrayWnd", null);
+        if (shellTray == IntPtr.Zero || !GetWindowRect(shellTray, out RECT sr))
+            return;
+
+        int shellWidth = sr.right - sr.left;
+        int shellHeight = sr.bottom - sr.top;
+        if (shellWidth <= 0 || shellHeight <= 0)
+            return;
+
+        // Find the right edge of the app icons (MSTaskListWClass / MSTaskSwWClass / ReBarWindow32)
+        int rebarRight = sr.left + (int)(shellWidth * 0.55);
+        IntPtr rebar = FindWindowEx(shellTray, IntPtr.Zero, "ReBarWindow32", null);
+        if (rebar != IntPtr.Zero && GetWindowRect(rebar, out RECT rr) && rr.right > sr.left)
+        {
+            rebarRight = rr.right;
+        }
+
+        // Determine the left edge of the System Tray area (chevron + tray icons + ENG INTL + network/sound/battery + clock)
+        int trayLeft = _cachedTrayNotifyLeft;
+        IntPtr trayNotify = FindWindowEx(shellTray, IntPtr.Zero, "TrayNotifyWnd", null);
+        if (trayNotify != IntPtr.Zero && GetWindowRect(trayNotify, out RECT nr) && nr.right > nr.left && nr.left > sr.left)
+        {
+            trayLeft = nr.left;
+            _cachedTrayNotifyLeft = nr.left;
+        }
+
+        int fallbackTrayLeft = sr.right - (int)(shellWidth * 0.341);
+        if (trayLeft <= sr.left || trayLeft > fallbackTrayLeft)
+        {
+            trayLeft = Math.Max(Math.Min(rebarRight, fallbackTrayLeft), fallbackTrayLeft);
+        }
+
+        // Sample live taskbar background pixel just to the left of the system tray so color matches 100%
+        if (!_trayCoverWindow!.IsVisible && cover.Content is System.Windows.Controls.Border b)
+        {
+            if (TrySampleScreenPixel(Math.Max(sr.left + 10, trayLeft - 8), sr.top + (shellHeight / 2), out var bgColor))
+            {
+                b.Background = new System.Windows.Media.SolidColorBrush(bgColor);
+                cover.Background = new System.Windows.Media.SolidColorBrush(bgColor);
+            }
+            if (TrySampleScreenPixel(Math.Max(sr.left + 10, trayLeft - 8), sr.top, out var topBorderColor))
+            {
+                b.BorderBrush = new System.Windows.Media.SolidColorBrush(topBorderColor);
+            }
+        }
+
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(cover).Handle;
+        if (hwnd != IntPtr.Zero)
+        {
+            Core.Native.NativeMethods.SetWindowPos(
+                hwnd,
+                Core.Native.NativeMethods.HWND_TOPMOST,
+                trayLeft,
+                sr.top,
+                Math.Max(60, sr.right - trayLeft),
+                shellHeight,
+                Core.Native.NativeMethods.SWP_NOACTIVATE | Core.Native.NativeMethods.SWP_SHOWWINDOW);
+        }
+        else
+        {
+            double dpiX = 1.0, dpiY = 1.0;
+            var src = System.Windows.PresentationSource.FromVisual(System.Windows.Application.Current.MainWindow);
+            if (src?.CompositionTarget != null)
+            {
+                dpiX = src.CompositionTarget.TransformToDevice.M11;
+                dpiY = src.CompositionTarget.TransformToDevice.M22;
+            }
+            cover.Left = trayLeft / dpiX;
+            cover.Top = sr.top / dpiY;
+            cover.Width = Math.Max(60, (sr.right - trayLeft) / dpiX);
+            cover.Height = shellHeight / dpiY;
+        }
+    }
+
+    private static bool TrySampleScreenPixel(int x, int y, out System.Windows.Media.Color color)
+    {
+        color = System.Windows.Media.Color.FromRgb(0x1F, 0x1F, 0x1F);
+        IntPtr hdc = GetDC(IntPtr.Zero);
+        if (hdc == IntPtr.Zero) return false;
+        try
+        {
+            uint pixel = GetPixel(hdc, x, y);
+            if (pixel == 0xFFFFFFFF) return false;
+            byte r = (byte)(pixel & 0x000000FF);
+            byte g = (byte)((pixel & 0x0000FF00) >> 8);
+            byte b = (byte)((pixel & 0x00FF0000) >> 16);
+            color = System.Windows.Media.Color.FromRgb(r, g, b);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+        finally
+        {
+            ReleaseDC(IntPtr.Zero, hdc);
+        }
+    }
+
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    private static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string? lpszWindow);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetDC(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+    [DllImport("gdi32.dll")]
+    private static extern uint GetPixel(IntPtr hdc, int nXPos, int nYPos);
 
     private static void OpenSettingsUri(string uri)
     {
