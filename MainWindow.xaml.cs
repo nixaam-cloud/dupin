@@ -18,8 +18,8 @@ public partial class MainWindow : Window
     private const int HOTKEY_ID = 9001;
 
     // Animation dimensions
-    private const double MINIMAL_WIDTH = 68;
-    private const double MINIMAL_HEIGHT = 20;
+    private const double MINIMAL_WIDTH = 104;
+    private const double MINIMAL_HEIGHT = 22;
     private const double COLLAPSED_WIDTH = 180;
     private const double COLLAPSED_HEIGHT = 32;
     private const double HUD_WIDTH = 228;
@@ -312,6 +312,8 @@ public partial class MainWindow : Window
                     AlertsTabButton.IsChecked = true;
                 else if (string.Equals(tabName, "Tools", StringComparison.OrdinalIgnoreCase) && ToolsTabButton != null)
                     ToolsTabButton.IsChecked = true;
+                else if (string.Equals(tabName, "Calendar", StringComparison.OrdinalIgnoreCase) && CalendarTabButton != null)
+                    CalendarTabButton.IsChecked = true;
 
                 if (!_isExpanded)
                 {
@@ -937,6 +939,10 @@ public partial class MainWindow : Window
             {
                 toolsVm.Tools.SyncHardwareLevels();
                 _ = toolsVm.Tools.RefreshRadiosAsync();
+            }
+            else if (string.Equals(tabName, "Calendar", StringComparison.OrdinalIgnoreCase) && DataContext is MainViewModel calVm)
+            {
+                _ = calVm.Calendar.SyncOutlookAsync();
             }
         }
     }

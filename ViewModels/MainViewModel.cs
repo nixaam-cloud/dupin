@@ -139,6 +139,7 @@ public partial class MainViewModel : ObservableObject
     public HardwareHudService HardwareHud { get; }
     public UsageViewModel Usage { get; }
     public ToolsViewModel Tools { get; }
+    public CalendarViewModel Calendar { get; }
 
     public bool IsExpanded => State == NotchState.Expanded;
 
@@ -156,11 +157,17 @@ public partial class MainViewModel : ObservableObject
         Water = new WaterViewModel();
         Weather = new WeatherViewModel();
         Todo = new TodoViewModel();
+        Calendar = new CalendarViewModel();
         Shelf = new ShelfViewModel();
         AI = new AiAssistantViewModel(aiService);
         Usage = new UsageViewModel();
         Tools = new ToolsViewModel(HardwareHud);
         Tools.FeedbackRequested += (title, sub) => TriggerPeek(title, sub);
+        Calendar.MeetingReminderFired += (title, sub) =>
+        {
+            TriggerPeek(title, sub);
+            NotificationListener.PushNotification("Outlook", title, sub);
+        };
 
         // AI coding workflow notifications → notch banner + persistent Alerts history
         Usage.WorkflowNotification += ev =>

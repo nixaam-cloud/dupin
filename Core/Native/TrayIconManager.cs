@@ -225,6 +225,10 @@ public class TrayIconManager : IDisposable
         openAlertsItem.Click += (s, e) => OpenTabRequested?.Invoke("Notifications");
         menu.Items.Add(openAlertsItem);
 
+        var openCalendarItem = new MenuItem { Header = "Open Calendar & Outlook Events" };
+        openCalendarItem.Click += (s, e) => OpenTabRequested?.Invoke("Calendar");
+        menu.Items.Add(openCalendarItem);
+
         var openToolsItem = new MenuItem { Header = "Open System Tools (Wi-Fi, Bluetooth, Volume)" };
         openToolsItem.Click += (s, e) => OpenTabRequested?.Invoke("Tools");
         menu.Items.Add(openToolsItem);

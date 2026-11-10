@@ -15,6 +15,7 @@ public enum NotchTab
     Water,
     Weather,
     Todo,
+    Calendar,
     Shelf,
     AI,
     Usage,

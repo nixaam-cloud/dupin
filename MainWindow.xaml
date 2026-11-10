@@ -588,13 +588,13 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- Right: Time / Clock (hidden in minimal mode) -->
+                            <!-- Right: Time / Clock (Always visible, including in minimized state) -->
                             <TextBlock Grid.Column="2"
                                        Text="{Binding CurrentTimeText}"
-                                       FontSize="10" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       VerticalAlignment="Center"
-                                       Visibility="{Binding IsMinimal, Converter={StaticResource InverseBoolToVisConv}}" />
+                                       FontSize="9.5" FontWeight="SemiBold"
+                                       Foreground="#ECEFF7"
+                                       Margin="2,0,0,0"
+                                       VerticalAlignment="Center" />
                         </Grid>
 
                         <!-- 2B: Active Media / Music Pill (when playing media) -->
@@ -605,6 +605,7 @@
                               ToolTip="Click to shrink pill out of the way of browser tabs"
                               MouseLeftButtonDown="MediaPill_MouseDown">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
@@ -631,7 +632,7 @@
                                       Width="11" Height="11" Stretch="Uniform" />
                             </StackPanel>
 
-                            <!-- Center: Track Title Ticker (hidden in minimal mode so pill shrinks to tiny 64x18) -->
+                            <!-- Center: Track Title Ticker (hidden in minimal mode) -->
                             <Grid Grid.Column="1"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
@@ -662,6 +663,16 @@
                                            Foreground="{StaticResource TextMutedBrush}"
                                            VerticalAlignment="Center" />
                             </StackPanel>
+
+                            <!-- Right in Minimal Mode: Live Time -->
+                            <TextBlock Grid.Column="3"
+                                       Text="{Binding CurrentTimeText}"
+                                       FontSize="9.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#ECEFF7"
+                                       Margin="6,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding IsMinimal, Converter={StaticResource BoolToVisConv}}" />
                         </Grid>
                     </Grid>
                 </Grid>
@@ -787,6 +798,24 @@
                                           Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
                                           Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
                                     <TextBlock Text="Tasks" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- Calendar & Outlook Events Tab -->
+                            <RadioButton x:Name="CalendarTabButton"
+                                         Style="{StaticResource NotchTabButtonStyle}"
+                                         Click="TabButton_Click"
+                                         Tag="Calendar"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,2,0"
+                                         ToolTip="Live Time, Month Calendar &amp; Synced Outlook Events">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconCalendar}"
+                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                          Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="Calendar" FontSize="10.5" FontWeight="Medium" VerticalAlignment="Center" />
+                                    <Ellipse Width="5" Height="5" Fill="#34D399" Margin="4,0,0,0" VerticalAlignment="Center"
+                                             Visibility="{Binding Calendar.HasTodayEvents, Converter={StaticResource BoolToVisConv}}" />
                                 </StackPanel>
                             </RadioButton>
 
@@ -2540,6 +2569,262 @@
                                         </StackPanel>
                                     </Grid>
                                 </Border>
+                            </Grid>
+
+                            <!-- ==================== MODULE K: LIVE TIME, CALENDAR & OUTLOOK EVENTS ==================== -->
+                            <Grid x:Name="CalendarTabContent"
+                                  Visibility="{Binding ActiveTab, Converter={StaticResource TabToVisConv}, ConverterParameter=Calendar}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="240" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left Column: Live Digital Clock & Interactive Mini Month Calendar -->
+                                <Grid Grid.Column="0" Margin="0,0,10,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Row 0: Live Clock & Date -->
+                                    <Border Grid.Row="0" Background="#16161F" BorderBrush="#252535" BorderThickness="1"
+                                            CornerRadius="9" Padding="8,4" Margin="0,0,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                                    <TextBlock Text="{Binding Calendar.LiveClockText}"
+                                                               FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" />
+                                                    <TextBlock Text="{Binding Calendar.LiveAmPmText}"
+                                                               FontSize="9.5" FontWeight="Bold" Foreground="#34D399"
+                                                               Margin="4,0,0,2" VerticalAlignment="Bottom" />
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Calendar.LiveDateText}"
+                                                           FontSize="8.5" Foreground="{StaticResource TextSecondaryBrush}" />
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Today"
+                                                    Style="{StaticResource NotchIconButtonStyle}"
+                                                    Padding="6,2" FontSize="8.5" VerticalAlignment="Center"
+                                                    Command="{Binding Calendar.JumpToTodayCommand}"
+                                                    ToolTip="Jump to Today" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Row 1: Month Navigation + Weekday Headers -->
+                                    <StackPanel Grid.Row="1" Margin="0,0,0,2">
+                                        <Grid Margin="0,0,0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="18" Height="16" Padding="2"
+                                                    Command="{Binding Calendar.PreviousMonthCommand}"
+                                                    ToolTip="Previous Month">
+                                                <Path Data="{StaticResource IconChevronLeft}" Fill="#ECEFF7" Width="8" Height="8" Stretch="Uniform" />
+                                            </Button>
+                                            <TextBlock Grid.Column="1" Text="{Binding Calendar.MonthHeaderText}"
+                                                       FontSize="9.5" FontWeight="SemiBold" Foreground="#FFFFFF"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <Button Grid.Column="2" Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="18" Height="16" Padding="2"
+                                                    Command="{Binding Calendar.NextMonthCommand}"
+                                                    ToolTip="Next Month">
+                                                <Path Data="{StaticResource IconChevronRight}" Fill="#ECEFF7" Width="8" Height="8" Stretch="Uniform" />
+                                            </Button>
+                                        </Grid>
+
+                                        <UniformGrid Columns="7" Rows="1">
+                                            <TextBlock Text="S" FontSize="8" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                                            <TextBlock Text="M" FontSize="8" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                                            <TextBlock Text="T" FontSize="8" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                                            <TextBlock Text="W" FontSize="8" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                                            <TextBlock Text="T" FontSize="8" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                                            <TextBlock Text="F" FontSize="8" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                                            <TextBlock Text="S" FontSize="8" FontWeight="Bold" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                                        </UniformGrid>
+                                    </StackPanel>
+
+                                    <!-- Row 2: 42-Day Month Grid -->
+                                    <ItemsControl Grid.Row="2" ItemsSource="{Binding Calendar.Days}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Columns="7" Rows="6" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand"
+                                                        Command="{Binding DataContext.Calendar.SelectDayCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Border CornerRadius="4" Margin="1,0.5" Padding="2,0">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="Transparent" />
+                                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                                <Setter Property="BorderThickness" Value="1" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                                        <Setter Property="Background" Value="#143328" />
+                                                                        <Setter Property="BorderBrush" Value="#10B981" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                        <Setter Property="Background" Value="#3A1E12" />
+                                                                        <Setter Property="BorderBrush" Value="#F97316" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <Grid>
+                                                            <TextBlock Text="{Binding DayNumberText}"
+                                                                       FontSize="8.5" FontWeight="SemiBold"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="#ECEFF7" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
+                                                                                <Setter Property="Foreground" Value="#4B5563" />
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                                                <Setter Property="Foreground" Value="#34D399" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                            <Ellipse Width="3.5" Height="3.5" Fill="#34D399"
+                                                                     HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,1,0"
+                                                                     Visibility="{Binding HasEvents, Converter={StaticResource BoolToVisConv}}" />
+                                                        </Grid>
+                                                    </Border>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+
+                                <!-- Divider -->
+                                <Border Grid.Column="1" Background="#262635" Width="1" HorizontalAlignment="Center" Margin="0,4" />
+
+                                <!-- Right Column: Synced Outlook Events Schedule -->
+                                <Grid Grid.Column="2" Margin="10,0,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Header Row: Title, Outlook Sync Badge, + New Event, Sync Button -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Data="{StaticResource IconCalendar}" Fill="#34D399" Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Calendar.ScheduleHeaderText}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                            <Border Background="#132A20" BorderBrush="#059669" BorderThickness="1" CornerRadius="6" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Ellipse Width="5" Height="5" Fill="#34D399" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Calendar.SyncStatusText}" FontSize="8.5" FontWeight="SemiBold" Foreground="#6EE7B7" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="+ New Event"
+                                                    Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                    Padding="7,2" FontSize="9" Margin="0,0,4,0"
+                                                    Command="{Binding Calendar.CreateNewOutlookEventCommand}"
+                                                    ToolTip="Create a new Calendar Appointment in Outlook" />
+                                            <Button Style="{StaticResource NotchIconButtonStyle}"
+                                                    Width="22" Height="20" Padding="4"
+                                                    Command="{Binding Calendar.SyncOutlookCommand}"
+                                                    ToolTip="Sync Live Outlook Calendar Events">
+                                                <Path Data="{StaticResource IconReset}" Fill="#ECEFF7" Width="9" Height="9" Stretch="Uniform" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Empty State -->
+                                    <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                Visibility="{Binding Calendar.HasFilteredEvents, Converter={StaticResource InverseBoolToVisConv}}">
+                                        <Path Data="{StaticResource IconCalendar}" Fill="#4B5563" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                        <TextBlock Text="No Outlook Events Scheduled" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="Click another date on the calendar or click '+ New Event' to add one in Outlook." FontSize="9.5" Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                                    </StackPanel>
+
+                                    <!-- Synced Outlook Events List -->
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                                  Visibility="{Binding Calendar.HasFilteredEvents, Converter={StaticResource BoolToVisConv}}">
+                                        <ItemsControl ItemsSource="{Binding Calendar.FilteredEvents}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#16161F" BorderBrush="#252535" BorderThickness="1"
+                                                            CornerRadius="9" Padding="9,6" Margin="0,0,4,5">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="3" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <!-- Left Color Bar (Emerald for Today, Amber for Upcoming) -->
+                                                            <Border Grid.Column="0" CornerRadius="1.5" Margin="0,0,8,0">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Setter Property="Background" Value="#F97316" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                                                <Setter Property="Background" Value="#10B981" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                            </Border>
+
+                                                            <!-- Center: Time, Subject & Location -->
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <Border Background="#1E293B" CornerRadius="4" Padding="4,1" Margin="0,0,5,0">
+                                                                        <TextBlock Text="{Binding DayBadgeText}" FontSize="8.5" FontWeight="Bold" Foreground="#34D399" />
+                                                                    </Border>
+                                                                    <TextBlock Text="{Binding TimeRangeText}" FontSize="9.5" FontWeight="SemiBold" Foreground="#FDBA74" VerticalAlignment="Center" />
+                                                                    <Border Background="#EA580C" CornerRadius="4" Padding="4,0.5" Margin="6,0,0,0"
+                                                                            Visibility="{Binding HasStatusBadge, Converter={StaticResource BoolToVisConv}}">
+                                                                        <TextBlock Text="{Binding StatusBadgeText}" FontSize="8" FontWeight="Bold" Foreground="#FFFFFF" />
+                                                                    </Border>
+                                                                </StackPanel>
+
+                                                                <TextBlock Text="{Binding Subject}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"
+                                                                           TextTrimming="CharacterEllipsis" Margin="0,2,0,1" />
+
+                                                                <TextBlock Text="{Binding Location, StringFormat='📍 {0}'}" FontSize="9" Foreground="{StaticResource TextSecondaryBrush}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           Visibility="{Binding HasLocation, Converter={StaticResource BoolToVisConv}}" />
+                                                            </StackPanel>
+
+                                                            <!-- Right: Open in Outlook Button -->
+                                                            <Button Grid.Column="2" Content="Open"
+                                                                    Style="{StaticResource NotchIconButtonStyle}"
+                                                                    Padding="7,3" FontSize="8.5" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                                    Command="{Binding DataContext.Calendar.OpenOutlookEventCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    ToolTip="Open appointment in Outlook" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
                             </Grid>
 
                             <!-- ==================== MODULE I: AI CODING USAGE & WORKFLOWS ==================== -->
