@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,8 +22,10 @@ public partial class CalendarViewModel : ObservableObject
 {
     private readonly DispatcherTimer _clockTimer;
     private readonly DispatcherTimer _syncTimer;
+    private readonly string _cachePath;
     private List<OutlookCalendarEvent> _allFetchedEvents = new();
     private readonly HashSet<string> _notifiedEventKeys = new();
+    private DateTime _lastKnownToday = DateTime.Today;
 
     [ObservableProperty]
     private string _liveClockText = DateTime.Now.ToString("hh:mm:ss", CultureInfo.InvariantCulture);
@@ -42,7 +46,7 @@ public partial class CalendarViewModel : ObservableObject
     private string _monthHeaderText = DateTime.Today.ToString("MMMM yyyy", CultureInfo.InvariantCulture);
 
     [ObservableProperty]
-    private string _syncStatusText = "Syncing Outlook...";
+    private string _syncStatusText = "Ready";
 
     [ObservableProperty]
     private bool _isSyncing = false;
@@ -65,7 +69,14 @@ public partial class CalendarViewModel : ObservableObject
 
     public CalendarViewModel()
     {
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string dupinDir = Path.Combine(appData, "Dupin");
+        Directory.CreateDirectory(dupinDir);
+        _cachePath = Path.Combine(dupinDir, "calendar_cache.json");
+
+        LoadCachedEvents();
         RebuildMonthGrid();
+        RefreshFilteredEvents();
 
         _clockTimer = new DispatcherTimer
         {
@@ -77,18 +88,62 @@ public partial class CalendarViewModel : ObservableObject
             LiveClockText = now.ToString("hh:mm:ss", CultureInfo.InvariantCulture);
             LiveAmPmText = now.ToString("tt", CultureInfo.InvariantCulture);
             LiveDateText = now.ToString("dddd, MMM d, yyyy", CultureInfo.InvariantCulture);
+
+            // Automatically roll SelectedDate & Month Grid forward when midnight passes
+            if (now.Date != _lastKnownToday)
+            {
+                bool wasOnYesterday = SelectedDate.Date == _lastKnownToday;
+                _lastKnownToday = now.Date;
+                if (wasOnYesterday)
+                {
+                    SelectedDate = now.Date;
+                    DisplayedMonth = new DateTime(now.Year, now.Month, 1);
+                }
+                RebuildMonthGrid();
+                RefreshFilteredEvents();
+            }
+
             CheckUpcomingMeetingReminders(now);
         };
         _clockTimer.Start();
 
+        // Gentle 30-minute background sync that only reads when Outlook is actively open
         _syncTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMinutes(3)
+            Interval = TimeSpan.FromMinutes(30)
         };
-        _syncTimer.Tick += async (s, e) => await SyncOutlookAsync();
+        _syncTimer.Tick += async (s, e) => await SyncOutlookInternalAsync(userInitiated: false);
         _syncTimer.Start();
 
-        _ = SyncOutlookAsync();
+        _ = SyncOutlookInternalAsync(userInitiated: false);
+    }
+
+    private void LoadCachedEvents()
+    {
+        try
+        {
+            if (File.Exists(_cachePath))
+            {
+                string json = File.ReadAllText(_cachePath);
+                var cached = JsonSerializer.Deserialize<List<OutlookCalendarEvent>>(json);
+                if (cached != null && cached.Count > 0)
+                {
+                    _allFetchedEvents = cached.OrderBy(e => e.Start).ToList();
+                    SyncStatusText = $"Cached ({_allFetchedEvents.Count})";
+                }
+            }
+        }
+        catch { }
+    }
+
+    private void SaveCachedEvents()
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(_allFetchedEvents, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(_cachePath, json);
+        }
+        catch { }
     }
 
     private void RebuildMonthGrid()
@@ -199,7 +254,7 @@ public partial class CalendarViewModel : ObservableObject
     {
         DisplayedMonth = DisplayedMonth.AddMonths(-1);
         RebuildMonthGrid();
-        _ = SyncOutlookAsync();
+        RefreshFilteredEvents();
     }
 
     [RelayCommand]
@@ -207,7 +262,7 @@ public partial class CalendarViewModel : ObservableObject
     {
         DisplayedMonth = DisplayedMonth.AddMonths(1);
         RebuildMonthGrid();
-        _ = SyncOutlookAsync();
+        RefreshFilteredEvents();
     }
 
     [RelayCommand]
@@ -237,11 +292,12 @@ public partial class CalendarViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task SyncOutlookAsync()
+    public async Task SyncOutlookAsync() => await SyncOutlookInternalAsync(userInitiated: true);
+
+    private async Task SyncOutlookInternalAsync(bool userInitiated)
     {
         if (IsSyncing) return;
         IsSyncing = true;
-        SyncStatusText = "Syncing Outlook...";
 
         try
         {
@@ -252,9 +308,21 @@ public partial class CalendarViewModel : ObservableObject
             if (DateTime.Today.AddDays(21) > rangeEnd)
                 rangeEnd = DateTime.Today.AddDays(21);
 
-            var events = await Task.Run(() => FetchOutlookMapiEvents(rangeStart, rangeEnd));
+            var events = new List<OutlookCalendarEvent>();
+            bool mapiReadSucceeded = false;
 
-            // Also merge Windows AppointmentStore events if any exist
+            // Only attach to an already-running Outlook instance (never spawn background OUTLOOK.EXE that locks .ost!)
+            if (IsOutlookRunningWithWindow())
+            {
+                SyncStatusText = "Syncing Outlook...";
+                var mapiTask = Task.Run(() => FetchOutlookMapiEventsSafe(rangeStart, rangeEnd, out mapiReadSucceeded));
+                if (await Task.WhenAny(mapiTask, Task.Delay(3500)) == mapiTask)
+                {
+                    events = await mapiTask;
+                }
+            }
+
+            // Also merge Windows AppointmentStore events (never touches Classic Outlook MAPI)
             try
             {
                 var winEvents = await FetchWindowsStoreAppointmentsAsync(rangeStart, rangeEnd);
@@ -268,22 +336,82 @@ public partial class CalendarViewModel : ObservableObject
             }
             catch { }
 
-            _allFetchedEvents = events
-                .OrderBy(e => e.Start)
-                .ToList();
-
-            UpdateGridEventDots();
-            RefreshFilteredEvents();
-            SyncStatusText = $"Outlook Synced ({_allFetchedEvents.Count})";
+            if (events.Count > 0 || mapiReadSucceeded)
+            {
+                _allFetchedEvents = events.OrderBy(e => e.Start).ToList();
+                SaveCachedEvents();
+                UpdateGridEventDots();
+                RefreshFilteredEvents();
+                SyncStatusText = $"Outlook Synced ({_allFetchedEvents.Count})";
+            }
+            else if (_allFetchedEvents.Count > 0)
+            {
+                UpdateGridEventDots();
+                RefreshFilteredEvents();
+                SyncStatusText = $"Cached ({_allFetchedEvents.Count})";
+            }
+            else
+            {
+                SyncStatusText = IsOutlookRunningWithWindow() ? "Outlook Synced (0)" : "Open Outlook to Sync";
+            }
         }
         catch
         {
-            SyncStatusText = "Outlook Offline";
+            SyncStatusText = _allFetchedEvents.Count > 0 ? $"Cached ({_allFetchedEvents.Count})" : "Outlook Idle";
         }
         finally
         {
             IsSyncing = false;
         }
+    }
+
+    private static bool IsOutlookRunningWithWindow()
+    {
+        try
+        {
+            var procs = Process.GetProcessesByName("OUTLOOK");
+            bool hasActive = false;
+            foreach (var p in procs)
+            {
+                try
+                {
+                    if (p.MainWindowHandle != IntPtr.Zero)
+                        hasActive = true;
+                }
+                catch { }
+                finally
+                {
+                    p.Dispose();
+                }
+            }
+            return hasActive;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    [DllImport("ole32.dll")]
+    private static extern int CLSIDFromProgID([MarshalAs(UnmanagedType.LPWStr)] string lpszProgID, out Guid pclsid);
+
+    [DllImport("oleaut32.dll", PreserveSig = true)]
+    private static extern int GetActiveObject(ref Guid rclsid, IntPtr pvReserved, [MarshalAs(UnmanagedType.IUnknown)] out object? ppunk);
+
+    private static object? TryGetRunningOutlookApp()
+    {
+        try
+        {
+            if (CLSIDFromProgID("Outlook.Application", out Guid clsid) == 0)
+            {
+                if (GetActiveObject(ref clsid, IntPtr.Zero, out object? obj) == 0 && obj != null)
+                {
+                    return obj;
+                }
+            }
+        }
+        catch { }
+        return null;
     }
 
     private static object? Call(object comObj, string method, params object[] args)
@@ -295,25 +423,38 @@ public partial class CalendarViewModel : ObservableObject
     private static void SetProp(object comObj, string prop, object value)
         => comObj.GetType().InvokeMember(prop, BindingFlags.SetProperty, null, comObj, new[] { value });
 
-    private static List<OutlookCalendarEvent> FetchOutlookMapiEvents(DateTime rangeStart, DateTime rangeEnd)
+    private static void ReleaseCom(object? comObj)
     {
+        if (comObj != null && Marshal.IsComObject(comObj))
+        {
+            try { Marshal.FinalReleaseComObject(comObj); } catch { }
+        }
+    }
+
+    private static List<OutlookCalendarEvent> FetchOutlookMapiEventsSafe(DateTime rangeStart, DateTime rangeEnd, out bool succeeded)
+    {
+        succeeded = false;
         var results = new List<OutlookCalendarEvent>();
+
+        object? outlookApp = null;
+        object? ns = null;
+        object? calendarFolder = null;
+        object? items = null;
+        object? restricted = null;
 
         try
         {
-            Type? outlookType = Type.GetTypeFromProgID("Outlook.Application");
-            if (outlookType == null) return results;
-
-            object? outlookApp = Activator.CreateInstance(outlookType);
+            // Attach ONLY to running Outlook in ROT — never CoCreateInstance!
+            outlookApp = TryGetRunningOutlookApp();
             if (outlookApp == null) return results;
 
-            object? ns = Call(outlookApp, "GetNamespace", "MAPI");
+            ns = Call(outlookApp, "GetNamespace", "MAPI");
             if (ns == null) return results;
 
-            object? calendarFolder = Call(ns, "GetDefaultFolder", 9); // olFolderCalendar = 9
+            calendarFolder = Call(ns, "GetDefaultFolder", 9); // olFolderCalendar = 9
             if (calendarFolder == null) return results;
 
-            object? items = GetProp(calendarFolder, "Items");
+            items = GetProp(calendarFolder, "Items");
             if (items == null) return results;
 
             SetProp(items, "IncludeRecurrences", true);
@@ -323,56 +464,83 @@ public partial class CalendarViewModel : ObservableObject
             string endStr = rangeEnd.ToString("MM/dd/yyyy hh:mm tt", CultureInfo.InvariantCulture);
             string filter = $"[Start] >= '{startStr}' AND [Start] <= '{endStr}'";
 
-            object? restricted = Call(items, "Restrict", filter);
-            if (restricted is not System.Collections.IEnumerable enumerable) return results;
+            restricted = Call(items, "Restrict", filter);
+            if (restricted == null) return results;
 
+            succeeded = true;
+            object? item = Call(restricted, "GetFirst");
             int safetyCount = 0;
-            foreach (object? item in enumerable)
-            {
-                if (item == null) continue;
-                safetyCount++;
-                if (safetyCount > 250) break;
 
+            while (item != null && safetyCount < 120)
+            {
+                safetyCount++;
+                object? nextItem = null;
                 try
                 {
-                    if (GetProp(item, "Start") is not DateTime itemStart) continue;
-                    DateTime itemEnd = GetProp(item, "End") is DateTime e ? e : itemStart.AddMinutes(30);
-
-                    if (itemEnd < rangeStart || itemStart > rangeEnd)
-                        continue;
-
-                    string subject = GetProp(item, "Subject") as string ?? "Untitled Event";
-                    string location = string.Empty;
-                    try { location = GetProp(item, "Location") as string ?? string.Empty; } catch { }
-
-                    bool isAllDay = false;
-                    try { if (GetProp(item, "AllDayEvent") is bool b) isAllDay = b; } catch { }
-
-                    bool isRecurring = false;
-                    try { if (GetProp(item, "IsRecurring") is bool r) isRecurring = r; } catch { }
-
-                    string organizer = string.Empty;
-                    try { organizer = GetProp(item, "Organizer") as string ?? string.Empty; } catch { }
-
-                    string entryId = string.Empty;
-                    try { entryId = GetProp(item, "EntryID") as string ?? string.Empty; } catch { }
-
-                    results.Add(new OutlookCalendarEvent
+                    if (GetProp(item, "Start") is DateTime itemStart)
                     {
-                        EntryId = entryId,
-                        Subject = subject.Trim(),
-                        Start = itemStart,
-                        End = itemEnd,
-                        Location = location.Trim(),
-                        IsAllDay = isAllDay,
-                        IsRecurring = isRecurring,
-                        Organizer = organizer.Trim()
-                    });
+                        DateTime itemEnd = GetProp(item, "End") is DateTime e ? e : itemStart.AddMinutes(30);
+                        if (itemEnd >= rangeStart && itemStart <= rangeEnd)
+                        {
+                            string subject = GetProp(item, "Subject") as string ?? "Untitled Event";
+                            string location = string.Empty;
+                            try { location = GetProp(item, "Location") as string ?? string.Empty; } catch { }
+
+                            bool isAllDay = false;
+                            try { if (GetProp(item, "AllDayEvent") is bool b) isAllDay = b; } catch { }
+
+                            bool isRecurring = false;
+                            try { if (GetProp(item, "IsRecurring") is bool r) isRecurring = r; } catch { }
+
+                            string organizer = string.Empty;
+                            try { organizer = GetProp(item, "Organizer") as string ?? string.Empty; } catch { }
+
+                            string entryId = string.Empty;
+                            try { entryId = GetProp(item, "EntryID") as string ?? string.Empty; } catch { }
+
+                            results.Add(new OutlookCalendarEvent
+                            {
+                                EntryId = entryId,
+                                Subject = subject.Trim(),
+                                Start = itemStart,
+                                End = itemEnd,
+                                Location = location.Trim(),
+                                IsAllDay = isAllDay,
+                                IsRecurring = isRecurring,
+                                Organizer = organizer.Trim()
+                            });
+                        }
+                    }
+
+                    nextItem = Call(restricted, "GetNext");
                 }
-                catch { }
+                catch
+                {
+                    nextItem = null;
+                }
+                finally
+                {
+                    // Deterministically release each AppointmentItem immediately so MAPI handles never accumulate!
+                    ReleaseCom(item);
+                }
+
+                item = nextItem;
+            }
+
+            if (item != null)
+            {
+                ReleaseCom(item);
             }
         }
         catch { }
+        finally
+        {
+            ReleaseCom(restricted);
+            ReleaseCom(items);
+            ReleaseCom(calendarFolder);
+            ReleaseCom(ns);
+            ReleaseCom(outlookApp);
+        }
 
         return results;
     }
@@ -410,26 +578,29 @@ public partial class CalendarViewModel : ObservableObject
     {
         Task.Run(() =>
         {
+            object? outlookApp = null;
+            object? appt = null;
             try
             {
-                Type? outlookType = Type.GetTypeFromProgID("Outlook.Application");
-                if (outlookType != null)
+                outlookApp = TryGetRunningOutlookApp();
+                if (outlookApp != null)
                 {
-                    object? outlookApp = Activator.CreateInstance(outlookType);
-                    if (outlookApp != null)
+                    appt = Call(outlookApp, "CreateItem", 1); // olAppointmentItem = 1
+                    if (appt != null)
                     {
-                        object? appt = Call(outlookApp, "CreateItem", 1); // olAppointmentItem = 1
-                        if (appt != null)
-                        {
-                            SetProp(appt, "Start", SelectedDate.Date.AddHours(DateTime.Now.Hour + 1));
-                            SetProp(appt, "End", SelectedDate.Date.AddHours(DateTime.Now.Hour + 2));
-                            Call(appt, "Display", false);
-                            return;
-                        }
+                        SetProp(appt, "Start", SelectedDate.Date.AddHours(DateTime.Now.Hour + 1));
+                        SetProp(appt, "End", SelectedDate.Date.AddHours(DateTime.Now.Hour + 2));
+                        Call(appt, "Display", false);
+                        return;
                     }
                 }
             }
             catch { }
+            finally
+            {
+                ReleaseCom(appt);
+                ReleaseCom(outlookApp);
+            }
 
             try
             {
@@ -446,31 +617,36 @@ public partial class CalendarViewModel : ObservableObject
 
         Task.Run(() =>
         {
+            object? outlookApp = null;
+            object? ns = null;
+            object? item = null;
             try
             {
                 if (!string.IsNullOrWhiteSpace(ev.EntryId))
                 {
-                    Type? outlookType = Type.GetTypeFromProgID("Outlook.Application");
-                    if (outlookType != null)
+                    outlookApp = TryGetRunningOutlookApp();
+                    if (outlookApp != null)
                     {
-                        object? outlookApp = Activator.CreateInstance(outlookType);
-                        if (outlookApp != null)
+                        ns = Call(outlookApp, "GetNamespace", "MAPI");
+                        if (ns != null)
                         {
-                            object? ns = Call(outlookApp, "GetNamespace", "MAPI");
-                            if (ns != null)
+                            item = Call(ns, "GetItemFromID", ev.EntryId);
+                            if (item != null)
                             {
-                                object? item = Call(ns, "GetItemFromID", ev.EntryId);
-                                if (item != null)
-                                {
-                                    Call(item, "Display", false);
-                                    return;
-                                }
+                                Call(item, "Display", false);
+                                return;
                             }
                         }
                     }
                 }
             }
             catch { }
+            finally
+            {
+                ReleaseCom(item);
+                ReleaseCom(ns);
+                ReleaseCom(outlookApp);
+            }
 
             try
             {
