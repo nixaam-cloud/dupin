@@ -1404,6 +1404,18 @@ public partial class MainWindow : Window
         }
     }
 
+    private void TrayAppButton_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is TrayAppItem app && DataContext is MainViewModel vm)
+        {
+            e.Handled = true;
+            _collapseTimer.Stop();
+            var menu = vm.Tools.CreateAppActionsContextMenu(app);
+            menu.PlacementTarget = fe;
+            menu.IsOpen = true;
+        }
+    }
+
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
     {
         Dispatcher.BeginInvoke(new Action(() => UpdatePosition(force: true)));

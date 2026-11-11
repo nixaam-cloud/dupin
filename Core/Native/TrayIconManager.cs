@@ -237,6 +237,32 @@ public class TrayIconManager : IDisposable
 
         if (vm?.Tools != null)
         {
+            vm.Tools.RefreshTrayApps();
+            var trayAppsMenu = new MenuItem
+            {
+                Header = $"System Tray & Open Apps ({vm.Tools.TrayAppsCount})"
+            };
+
+            foreach (var app in vm.Tools.TrayApps)
+            {
+                var appSubMenu = new MenuItem
+                {
+                    Header = $"{app.Name} — {app.BadgeText}"
+                };
+
+                var openAppItem = new MenuItem { Header = "Open / Bring to Front", FontWeight = FontWeights.SemiBold };
+                openAppItem.Click += (s, e) => vm.Tools.OpenTrayApp(app);
+                appSubMenu.Items.Add(openAppItem);
+
+                var actionsItem = new MenuItem { Header = "More App Actions..." };
+                actionsItem.Click += (s, e) => vm.Tools.ShowTrayAppMenu(app);
+                appSubMenu.Items.Add(actionsItem);
+
+                trayAppsMenu.Items.Add(appSubMenu);
+            }
+
+            menu.Items.Add(trayAppsMenu);
+
             var hideTaskbarItem = new MenuItem
             {
                 Header = "Hide Taskbar System Tray (Keep Start & Apps)",

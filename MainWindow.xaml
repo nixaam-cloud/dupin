@@ -3210,8 +3210,9 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <!-- Row 0: 6 Quick Settings Tiles (Wi-Fi, Bluetooth, Airplane, Energy Saver, Night Light, Accessibility) -->
-                                <UniformGrid Grid.Row="0" Columns="6" Rows="1" Margin="0,0,0,7">
+                                <!-- Row 0: 6 Quick Settings Tiles (Visible when Tray Apps Drawer is closed) -->
+                                <UniformGrid Grid.Row="0" Columns="6" Rows="1" Margin="0,0,0,7"
+                                             Visibility="{Binding Tools.IsTrayAppsPopupOpen, Converter={StaticResource InverseBoolToVisConv}}">
                                     <!-- 1. Wi-Fi Split Tile -->
                                     <StackPanel Margin="0,0,5,0">
                                         <Border CornerRadius="8" BorderThickness="1" Height="34" ClipToBounds="True">
@@ -3386,9 +3387,10 @@
                                     </StackPanel>
                                 </UniformGrid>
 
-                                <!-- Row 1: Brightness & Volume Interactive Sliders -->
+                                <!-- Row 1: Brightness & Volume Interactive Sliders (Visible when Tray Apps Drawer is closed) -->
                                 <Border Grid.Row="1" Background="#16161F" BorderBrush="#252535" BorderThickness="1"
-                                        CornerRadius="10" Padding="12,6" Margin="0,0,0,7" VerticalAlignment="Center">
+                                        CornerRadius="10" Padding="12,6" Margin="0,0,0,7" VerticalAlignment="Center"
+                                        Visibility="{Binding Tools.IsTrayAppsPopupOpen, Converter={StaticResource InverseBoolToVisConv}}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -3454,20 +3456,189 @@
                                     </Grid>
                                 </Border>
 
-                                <!-- Row 2: Taskbar / System Status Bar + Hide Taskbar & Hide Top Bar Toggles -->
+                                <!-- Row 0-1 Alternate View: SYSTEM TRAY & OPEN APPS FLYOUT DRAWER (Visible when ^ Apps button is active) -->
+                                <Border Grid.Row="0" Grid.RowSpan="2"
+                                        Background="#171721" BorderBrush="#2A2A3C" BorderThickness="1"
+                                        CornerRadius="10" Padding="10,6" Margin="0,0,0,6"
+                                        Visibility="{Binding Tools.IsTrayAppsPopupOpen, Converter={StaticResource BoolToVisConv}}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Header: Filter Pills + Native Flyout + Refresh + Back to Quick Settings -->
+                                        <Grid Grid.Row="0" Margin="0,0,0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Left: Title & Filter Tabs -->
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="Open &amp; Tray Apps" FontSize="10.5" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="0,0,8,0" />
+
+                                                <Button Content="All" Padding="7,1.5" FontSize="9" Margin="0,0,4,0" Cursor="Hand"
+                                                        Style="{StaticResource NotchIconButtonStyle}"
+                                                        Command="{Binding Tools.SetTrayFilterCommand}" CommandParameter="All"
+                                                        ToolTip="Show both System Tray icons and Open Desktop Apps" />
+                                                <Button Content="System Tray" Padding="7,1.5" FontSize="9" Margin="0,0,4,0" Cursor="Hand"
+                                                        Style="{StaticResource NotchIconButtonStyle}"
+                                                        Command="{Binding Tools.SetTrayFilterCommand}" CommandParameter="Tray"
+                                                        ToolTip="Show background System Tray apps (^ overflow icons)" />
+                                                <Button Content="Open Windows" Padding="7,1.5" FontSize="9" Cursor="Hand"
+                                                        Style="{StaticResource NotchIconButtonStyle}"
+                                                        Command="{Binding Tools.SetTrayFilterCommand}" CommandParameter="Windows"
+                                                        ToolTip="Show open desktop windows" />
+                                            </StackPanel>
+
+                                            <!-- Center Hint -->
+                                            <TextBlock Grid.Column="1" Text="Click to open · Right-click or ⋯ for actions"
+                                                       FontSize="8.5" Foreground="{StaticResource TextMutedBrush}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                                            <!-- Right: Pop-Out Bottom Tray Flyout + Refresh + Back -->
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Content="⌃ Tray Flyout" Padding="7,2" FontSize="9" Margin="0,0,4,0" Cursor="Hand"
+                                                        Style="{StaticResource NotchIconButtonStyle}"
+                                                        Command="{Binding Tools.OpenNativeWindowsTrayCommand}"
+                                                        ToolTip="Pop open the floating System Tray icon grid above the taskbar" />
+                                                <Button Content="↻" Padding="5,1" FontSize="10" Margin="0,0,4,0" Cursor="Hand"
+                                                        Style="{StaticResource NotchIconButtonStyle}"
+                                                        Command="{Binding Tools.RefreshTrayAppsCommand}"
+                                                        ToolTip="Refresh running tray &amp; open apps" />
+                                                <Button Content="Quick Settings" Padding="7,2" FontSize="9" Cursor="Hand"
+                                                        Style="{StaticResource NotchPrimaryButtonStyle}"
+                                                        Command="{Binding Tools.ToggleTrayAppsPopupCommand}"
+                                                        ToolTip="Return to Wi-Fi, Bluetooth, Brightness &amp; Volume controls" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Scrollable Grid of Tray & Open App Tiles -->
+                                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                            <ItemsControl ItemsSource="{Binding Tools.TrayApps}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="#20202C" BorderBrush="#2E2E40" BorderThickness="1"
+                                                                CornerRadius="8" Width="134" Height="34" Margin="0,0,5,5"
+                                                                ToolTip="{Binding FullTooltip}">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="22" />
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <!-- Main Clickable Area (Left-Click: Open/Focus, Right-Click: Context Menu) -->
+                                                                <Button Grid.Column="0" Background="Transparent" BorderThickness="0"
+                                                                        Cursor="Hand" Padding="6,2" HorizontalContentAlignment="Stretch"
+                                                                        Command="{Binding DataContext.Tools.OpenTrayAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        MouseRightButtonUp="TrayAppButton_MouseRightButtonUp">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="22" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <Image Grid.Column="0" Source="{Binding IconSource}"
+                                                                               Width="18" Height="18" Stretch="Uniform"
+                                                                               VerticalAlignment="Center" HorizontalAlignment="Left" />
+                                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="4,0,0,0">
+                                                                            <TextBlock Text="{Binding Name}" FontSize="9.5" FontWeight="SemiBold"
+                                                                                       Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock Text="{Binding BadgeText}" FontSize="7.5"
+                                                                                       Foreground="#34D399" TextTrimming="CharacterEllipsis" />
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Button>
+
+                                                                <!-- Right '...' Actions Menu Button -->
+                                                                <Button Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                                                        Cursor="Hand" ToolTip="App Actions (Open, Native Menu, Restart, Quit)"
+                                                                        Command="{Binding DataContext.Tools.ShowTrayAppMenuCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <TextBlock Text="⋯" FontSize="11" FontWeight="Bold" Foreground="#A1A1B5"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Row 2: Taskbar / System Status Bar + ^ Tray Apps + Hide Taskbar & Hide Top Bar Toggles -->
                                 <Border Grid.Row="2" Background="#12121A" BorderBrush="#252535" BorderThickness="1"
-                                        CornerRadius="9" Padding="10,4">
+                                        CornerRadius="9" Padding="8,4">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
+                                        <!-- Far Left (Matching Windows 11 Taskbar Tray): '^' Hidden Icons Button + Mini Tray Icons -->
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
+                                            <Border CornerRadius="5" BorderThickness="1" Margin="0,0,4,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#1C1C28" />
+                                                        <Setter Property="BorderBrush" Value="#2E2E3E" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Tools.IsTrayAppsPopupOpen}" Value="True">
+                                                                <Setter Property="Background" Value="#059669" />
+                                                                <Setter Property="BorderBrush" Value="#34D399" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Button Background="Transparent" BorderThickness="0" Padding="6,2" Cursor="Hand"
+                                                        Command="{Binding Tools.ToggleTrayAppsPopupCommand}"
+                                                        ToolTip="Show / Hide Open &amp; System Tray Apps and Actions (^)">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Path Data="{StaticResource IconChevronUp}" Fill="#FFFFFF" Width="8" Height="8" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                        <TextBlock Text="Apps" FontSize="9" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                        <Border Background="#2A2A3C" CornerRadius="4" Padding="3.5,0.5">
+                                                            <TextBlock Text="{Binding Tools.TrayAppsCount}" FontSize="8" FontWeight="Bold" Foreground="#34D399" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Button>
+                                            </Border>
+
+                                            <!-- Mini Live Tray Icons Strip (Quick Click to Open, Right-Click for Actions) -->
+                                            <ItemsControl ItemsSource="{Binding Tools.PreviewTrayApps}" VerticalAlignment="Center">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Width="20" Height="20" Padding="2" Margin="0,0,2,0"
+                                                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                                                ToolTip="{Binding FullTooltip}"
+                                                                Command="{Binding DataContext.Tools.OpenTrayAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"
+                                                                MouseRightButtonUp="TrayAppButton_MouseRightButtonUp">
+                                                            <Image Source="{Binding IconSource}" Width="14" Height="14" Stretch="Uniform" />
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
                                         <!-- Keyboard Language Pill (ENG / INTL) -->
-                                        <Button Grid.Column="0" Background="#1C1C28" BorderBrush="#2E2E3E" BorderThickness="1"
-                                                Padding="6,2" Margin="0,0,8,0" Cursor="Hand"
+                                        <Button Grid.Column="1" Background="#1C1C28" BorderBrush="#2E2E3E" BorderThickness="1"
+                                                Padding="6,2" Margin="0,0,7,0" Cursor="Hand"
                                                 Command="{Binding Tools.OpenLanguageSettingsCommand}"
                                                 ToolTip="Keyboard &amp; Input Language Settings">
                                             <Button.Resources>
@@ -3482,9 +3653,9 @@
                                         </Button>
 
                                         <!-- System Icons Strip: Network + Speaker + Battery % -->
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <Path Data="{StaticResource IconWifi}" Fill="#ECEFF7" Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,7,0" />
-                                            <Path Data="{StaticResource IconVolume}" Fill="#ECEFF7" Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,7,0" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
+                                            <Path Data="{StaticResource IconWifi}" Fill="#ECEFF7" Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <Path Data="{StaticResource IconVolume}" Fill="#ECEFF7" Width="11" Height="11" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,6,0" />
                                             <Path Data="{StaticResource IconCharging}" Fill="#34D399" Width="10" Height="10" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,3,0"
                                                   Visibility="{Binding IsCharging, Converter={StaticResource BoolToVisConv}}" />
                                             <Path Data="{StaticResource IconBattery}" Fill="#34D399" Width="10" Height="10" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,3,0"
@@ -3493,13 +3664,13 @@
                                         </StackPanel>
 
                                         <!-- Center: Live Date & Clock (| Thu, Nov 05 2026 | 02:08:16 pm |) -->
-                                        <TextBlock Grid.Column="2" Text="{Binding Tools.FullClockText}"
-                                                   FontSize="10" FontWeight="Medium" Foreground="#ECEFF7"
+                                        <TextBlock Grid.Column="3" Text="{Binding Tools.FullClockText}"
+                                                   FontSize="9.5" FontWeight="Medium" Foreground="#ECEFF7"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
 
                                         <!-- Right: Hide Windows Taskbar Toggle + Hide Top Toolbar Toggle + Settings Gear -->
-                                        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                                             <!-- Toggle Windows Taskbar Button -->
                                             <Border CornerRadius="6" BorderThickness="1" Margin="0,0,5,0" Cursor="Hand">
                                                 <Border.Style>
